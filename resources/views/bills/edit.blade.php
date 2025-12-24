@@ -9,6 +9,35 @@
 <form id="billForm" method="POST" action="{{ route('bills.update', $bill) }}">
     @csrf
     @method('PUT')
+    <style>
+        #itemsTable .form-control, 
+        #itemsTable .form-select {
+            padding: 1rem 1.2rem;
+            font-size: 1.25rem;
+            height: auto;
+            border-radius: 0.85rem;
+            font-weight: 500;
+        }
+        #itemsTable .select2-container--bootstrap-5 .select2-selection {
+            min-height: 60px;
+            padding-top: 12px;
+            border-radius: 0.85rem;
+        }
+        #itemsTable .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+            line-height: 36px;
+            font-size: 1.25rem;
+            font-weight: 500;
+        }
+        .table > :not(caption) > * > * {
+            padding: 1.25rem 0.5rem;
+        }
+        #itemsTable thead th {
+            text-align: center !important;
+            vertical-align: middle;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+    </style>
 
     <!-- Bill Number and Date Row -->
     <div class="row g-3 mb-3">
@@ -49,22 +78,22 @@
         <div class="col-12">
             <h4 class="mb-3"><i class="fas fa-shopping-cart me-2"></i>Bill Items</h4>
             <div class="table-responsive">
-                <table class="table table-bordered align-middle" id="itemsTable">
+                <table class="table table-bordered align-middle" id="itemsTable" style="min-width: 1600px;">
                     <thead class="table-light">
                         <tr>
-                            <th>Item</th>
-                            <th class="text-end" style="width: 110px;">Qty</th>
-                            <th class="text-end" style="width: 140px;">Rate</th>
-                            <th class="text-end" style="width: 160px;">Total Amount</th>
-                            <th style="width: 160px;">Delivery Date</th>
-                            <th style="width: 160px;">Remarks</th>
-                            <th class="text-center" style="width: 80px;">Action</th>
+                            <th style="min-width: 550px;">Item</th>
+                            <th style="width: 220px;">Qty</th>
+                            <th style="width: 250px;">Rate</th>
+                            <th style="width: 280px;">Total Amount</th>
+                            <th style="width: 320px;">Delivery Date</th>
+                            <th style="width: 450px;">Remarks</th>
+                            <th style="width: 150px;">Action</th>
                         </tr>
                     </thead>
                     <tbody id="itemsBody">
                         @foreach($bill->billItems as $index => $billItem)
                         <tr class="item-row">
-                            <td>
+                            <td style="min-width: 550px;">
                                 <select class="form-select item-select" name="items[{{ $index }}][item_id]" required>
                                     <option value="">Select Item</option>
                                     @foreach($itemsForCustomer as $item)
@@ -72,22 +101,22 @@
                                     @endforeach
                                 </select>
                             </td>
-                            <td>
+                            <td style="width: 220px;">
                                 <input type="text" class="form-control text-end qty-input" name="items[{{ $index }}][quantity]" value="{{ $billItem->quantity }}" required>
                             </td>
-                            <td>
+                            <td style="width: 250px;">
                                 <input type="text" class="form-control text-end rate-input" name="items[{{ $index }}][rate]" value="{{ number_format($billItem->price, 2) }}" required>
                             </td>
-                            <td>
+                            <td style="width: 280px;">
                                 <input type="text" class="form-control text-end total-input" value="{{ number_format($billItem->total, 2) }}" readonly>
                             </td>
-                            <td>
+                            <td style="width: 320px;">
                                 <input type="date" class="form-control delivery-date-input" name="items[{{ $index }}][delivery_date]" value="{{ $billItem->delivery_date ? $billItem->delivery_date->format('Y-m-d') : '' }}">
                             </td>
-                            <td>
+                            <td style="width: 450px;">
                                 <input type="text" class="form-control remarks-input" name="items[{{ $index }}][remarks]" value="{{ $billItem->remarks }}" placeholder="Remarks">
                             </td>
-                            <td class="text-center">
+                            <td class="text-center" style="width: 150px;">
                                 <button type="button" class="btn btn-outline-danger btn-sm remove-item" {{ $bill->billItems->count() == 1 ? 'disabled' : '' }}>Remove</button>
                             </td>
                         </tr>

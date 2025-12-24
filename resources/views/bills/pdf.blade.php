@@ -143,10 +143,10 @@
     <div class="footer">
         This is a system-generated invoice and does not require a signature.
     </div>
+    <script type="text/php">
+        if (isset($pdf)) {
+            $pdf->page_script('if ($PAGE_COUNT > 1) { $font = $fontMetrics->get_font("Arial", "normal"); $size = 10; $text = "Page $PAGE_NUM of $PAGE_COUNT"; $width = $pdf->get_width(); $pdf->text($width - 120, $pdf->get_height() - 15, $text, $font, $size); }');
+        }
+    </script>
 </body>
-<script type="text/php">
-    if (isset($pdf)) {
-        $pdf->page_script('if ($PAGE_COUNT > 1) { $font = $fontMetrics->get_font("Arial", "normal"); $size = 10; $text = "Page $PAGE_NUM of $PAGE_COUNT"; $width = $pdf->get_width(); $pdf->text($width - 120, $pdf->get_height() - 15, $text, $font, $size); }');
-    }
-</script>
 </html>

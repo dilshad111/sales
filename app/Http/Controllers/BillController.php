@@ -43,7 +43,9 @@ class BillController extends Controller
      */
     public function create()
     {
-        $customers = Customer::where('status', 'active')->get();
+        $customers = Customer::where('status', 'active')
+            ->where('type', 'Un-Official')
+            ->get();
         $nextBillNumber = 'BILL' . str_pad(Bill::count() + 1, 4, '0', STR_PAD_LEFT);
 
         return view('bills.create', compact('customers', 'nextBillNumber'));
@@ -203,7 +205,9 @@ class BillController extends Controller
     {
         $bill->load('billItems.item');
 
-        $customers = Customer::all();
+        $customers = Customer::where('status', 'active')
+            ->where('type', 'Un-Official')
+            ->get();
 
         $itemsForCustomer = collect();
         if ($bill->customer_id) {

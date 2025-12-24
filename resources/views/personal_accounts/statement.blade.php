@@ -30,7 +30,7 @@
         <div class="card">
             <div class="card-body text-center">
                 <h5 class="card-title text-primary">Total Commission</h5>
-                <h3 class="text-primary">₨{{ number_format($statement->sum(fn($entry) => $entry['type'] === 'commission' ? $entry['amount'] : 0), 2) }}</h3>
+                <h3 class="text-primary">₨{{ number_format($statement['commission_total'], 2) }}</h3>
             </div>
         </div>
     </div>
@@ -38,15 +38,15 @@
         <div class="card">
             <div class="card-body text-center">
                 <h5 class="card-title text-success">Total Payments</h5>
-                <h3 class="text-success">₨{{ number_format($statement->sum(fn($entry) => $entry['type'] === 'payment' ? $entry['amount'] : 0), 2) }}</h3>
+                <h3 class="text-success">₨{{ number_format($statement['payment_total'], 2) }}</h3>
             </div>
         </div>
     </div>
     <div class="col-md-4">
         <div class="card">
             <div class="card-body text-center">
-                <h5 class="card-title {{ $statement->last()['running_balance'] > 0 ? 'text-danger' : 'text-success' }}">Current Balance</h5>
-                <h3 class="{{ $statement->last()['running_balance'] > 0 ? 'text-danger' : 'text-success' }}">₨{{ number_format($statement->last()['running_balance'], 2) }}</h3>
+                <h5 class="card-title {{ $statement['balance'] > 0 ? 'text-danger' : 'text-success' }}">Current Balance</h5>
+                <h3 class="{{ $statement['balance'] > 0 ? 'text-danger' : 'text-success' }}">₨{{ number_format($statement['balance'], 2) }}</h3>
             </div>
         </div>
     </div>
@@ -69,7 +69,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($statement as $entry)
+                    @forelse($statement['entries'] as $entry)
                     <tr>
                         <td>{{ \Carbon\Carbon::parse($entry['date'])->format('d/m/Y') }}</td>
                         <td>

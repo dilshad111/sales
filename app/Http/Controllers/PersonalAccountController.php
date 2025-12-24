@@ -199,7 +199,7 @@ class PersonalAccountController extends Controller
 
     protected function buildStatement(User $user, ?Carbon $from, ?Carbon $to): array
     {
-        $commissionsQuery = $user->commissions()->orderBy('commission_date')->orderBy('created_at');
+        $commissionsQuery = $user->commissions()->orderBy('commission_date', 'asc')->orderBy('created_at', 'asc');
         if ($from) {
             $commissionsQuery->whereDate('commission_date', '>=', $from->toDateString());
         }
@@ -208,7 +208,7 @@ class PersonalAccountController extends Controller
         }
         $commissions = $commissionsQuery->get();
 
-        $paymentsQuery = $user->commissionPayments()->orderBy('payment_date')->orderBy('created_at');
+        $paymentsQuery = $user->commissionPayments()->with('commission')->orderBy('payment_date', 'asc')->orderBy('created_at', 'asc');
         if ($from) {
             $paymentsQuery->whereDate('payment_date', '>=', $from->toDateString());
         }
@@ -222,24 +222,29 @@ class PersonalAccountController extends Controller
         foreach ($commissions as $commission) {
             $date = $commission->commission_date ?? $commission->created_at;
             $entries->push([
+                'id' => $commission->id,
                 'type' => 'commission',
                 'date' => $date instanceof Carbon ? $date : Carbon::parse($date),
                 'reference' => $commission->reference ?: '-',
                 'notes' => $commission->notes ?: '-',
                 'commission_amount' => (float) $commission->amount,
                 'payment_amount' => 0.0,
+                'amount' => (float) $commission->amount,
             ]);
         }
 
         foreach ($payments as $payment) {
             $date = $payment->payment_date ?? $payment->created_at;
             $entries->push([
+                'id' => $payment->id,
                 'type' => 'payment',
                 'date' => $date instanceof Carbon ? $date : Carbon::parse($date),
                 'reference' => $payment->reference ?: '-',
                 'notes' => $payment->notes ?: '-',
                 'commission_amount' => 0.0,
                 'payment_amount' => (float) $payment->amount,
+                'amount' => (float) $payment->amount,
+                'commission_ref' => $payment->commission ? ($payment->commission->reference ?: '#' . $payment->commission->id) : null,
             ]);
         }
 
@@ -259,6 +264,7 @@ class PersonalAccountController extends Controller
                 $runningBalance -= $entry['payment_amount'];
             }
             $entry['balance'] = round($runningBalance, 2);
+            $entry['running_balance'] = round($runningBalance, 2);
             return $entry;
         });
 

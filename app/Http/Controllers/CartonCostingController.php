@@ -13,9 +13,9 @@ use Illuminate\View\View;
 class CartonCostingController extends Controller
 {
     private const PLY_ALLOWANCES = [
-        3 => 12,
-        5 => 20,
-        7 => 25,
+        3 => 22, // 12 + 10
+        5 => 30, // 20 + 10
+        7 => 32, // 22 + 10
     ];
 
     private const FLUTE_FACTORS = [
@@ -61,6 +61,12 @@ class CartonCostingController extends Controller
             'length' => ['required', 'numeric', 'gt:0'],
             'width' => ['required', 'numeric', 'gt:0'],
             'height' => ['required', 'numeric', 'gt:0'],
+            'deckle_size' => ['required', 'numeric', 'gt:0'],
+            'sheet_length' => ['required', 'numeric', 'gt:0'],
+            'ups' => ['required', 'integer', 'min:1'],
+            'paper_tax_rate' => ['required', 'numeric', 'gte:0'],
+            'separator_cost' => ['required', 'numeric', 'gte:0'],
+            'honeycomb_cost' => ['required', 'numeric', 'gte:0'],
             'wastage_rate' => ['required', 'numeric', 'gte:0'],
             'overhead_rate' => ['required', 'numeric', 'gte:0'],
             'profit_rate' => ['required', 'numeric', 'gte:0'],
@@ -117,6 +123,12 @@ class CartonCostingController extends Controller
             'length' => ['required', 'numeric', 'gt:0'],
             'width' => ['required', 'numeric', 'gt:0'],
             'height' => ['required', 'numeric', 'gt:0'],
+            'deckle_size' => ['required', 'numeric', 'gt:0'],
+            'sheet_length' => ['required', 'numeric', 'gt:0'],
+            'ups' => ['required', 'integer', 'min:1'],
+            'paper_tax_rate' => ['required', 'numeric', 'gte:0'],
+            'separator_cost' => ['required', 'numeric', 'gte:0'],
+            'honeycomb_cost' => ['required', 'numeric', 'gte:0'],
             'wastage_rate' => ['required', 'numeric', 'gte:0'],
             'overhead_rate' => ['required', 'numeric', 'gte:0'],
             'profit_rate' => ['required', 'numeric', 'gte:0'],
@@ -149,6 +161,12 @@ class CartonCostingController extends Controller
             'length' => (float) $validated['length'],
             'width' => (float) $validated['width'],
             'height' => (float) $validated['height'],
+            'deckle_size' => (float) $validated['deckle_size'],
+            'sheet_length_manual' => (float) $validated['sheet_length'],
+            'ups' => (int) $validated['ups'],
+            'paper_tax_rate' => (float) $validated['paper_tax_rate'],
+            'separator_cost' => (float) $validated['separator_cost'],
+            'honeycomb_cost' => (float) $validated['honeycomb_cost'],
             'wastage_rate' => (float) $validated['wastage_rate'],
             'overhead_rate' => (float) $validated['overhead_rate'],
             'profit_rate' => (float) $validated['profit_rate'],
@@ -249,8 +267,14 @@ class CartonCostingController extends Controller
     private function performCalculation(array $data, array $layerTemplate): array
     {
         $ply = (int) $data['ply'];
-        $sheetWidth = ($data['width'] + $data['height']) + self::PLY_ALLOWANCES[$ply];
-        $sheetLength = (($data['length'] + $data['width']) * 2) + 75;
+        
+        // Use manual inputs (in inches) converted to mm
+        $sheetWidth = (float) ($data['deckle_size'] ?? 0) * 25.4;
+        $sheetLength = (float) ($data['sheet_length'] ?? 0) * 25.4;
+
+        // Fallback to auto-calculated if manual is 0 (should not happen with validation)
+        if ($sheetWidth <= 0) $sheetWidth = ($data['width'] + $data['height']) + self::PLY_ALLOWANCES[$ply];
+        if ($sheetLength <= 0) $sheetLength = (($data['length'] + $data['width']) * 2) + 75;
 
         $sheetWidthMeters = $sheetWidth / 1000;
         $sheetLengthMeters = $sheetLength / 1000;
@@ -259,10 +283,13 @@ class CartonCostingController extends Controller
         $layerResults = [];
         $totalPaperCost = 0.0;
 
+        $paperTaxRatePercent = (float) ($data['paper_tax_rate'] ?? 18);
+        $paperTaxFactor = 1 + ($paperTaxRatePercent / 100);
+
         foreach ($data['layers'] as $index => $layerInput) {
             $gsm = (float) $layerInput['gsm'];
             $rate = (float) $layerInput['rate'];
-            $rateExcludingGst = $rate / 1.18;
+            $rateExcludingGst = $rate / $paperTaxFactor;
             $weightKg = ($gsm * $sheetArea) / 1000;
 
             $isFlute = $layerTemplate[$index]['is_flute'];
@@ -305,7 +332,15 @@ class CartonCostingController extends Controller
         $overhead = $costAfterWastage * $overheadRate;
         $costBeforeProfit = $costAfterWastage + $overhead;
         $profit = $costBeforeProfit * $profitRate;
-        $finalCartonCost = $costBeforeProfit + $profit;
+        $finalSheetCost = $costBeforeProfit + $profit;
+
+        $ups = (int) ($data['ups'] ?? 1);
+        if ($ups <= 0) $ups = 1;
+
+        $separatorCost = (float) ($data['separator_cost'] ?? 0);
+        $honeycombCost = (float) ($data['honeycomb_cost'] ?? 0);
+
+        $finalCartonCost = ($finalSheetCost / $ups) + $separatorCost + $honeycombCost;
 
         return [
             'sheet_width' => $sheetWidth,
@@ -321,6 +356,11 @@ class CartonCostingController extends Controller
             'cost_before_profit' => $costBeforeProfit,
             'profit' => $profit,
             'final_carton_cost' => $finalCartonCost,
+            'final_sheet_cost' => $finalSheetCost,
+            'ups' => $ups,
+            'separator_cost' => $separatorCost,
+            'honeycomb_cost' => $honeycombCost,
+            'paper_tax_rate' => $paperTaxRatePercent,
             'wastage_rate_percent' => $wastageRatePercent,
             'overhead_rate_percent' => $overheadRatePercent,
             'profit_rate_percent' => $profitRatePercent,
@@ -339,6 +379,12 @@ class CartonCostingController extends Controller
             'length' => null,
             'width' => null,
             'height' => null,
+            'deckle_size' => null,
+            'sheet_length' => null,
+            'ups' => 1,
+            'paper_tax_rate' => 18,
+            'separator_cost' => 0,
+            'honeycomb_cost' => 0,
             'wastage_rate' => self::DEFAULT_WASTAGE_RATE * 100,
             'overhead_rate' => self::DEFAULT_OVERHEAD_RATE * 100,
             'profit_rate' => self::DEFAULT_PROFIT_RATE * 100,
@@ -376,6 +422,12 @@ class CartonCostingController extends Controller
             'length' => $cartonCosting->length,
             'width' => $cartonCosting->width,
             'height' => $cartonCosting->height,
+            'deckle_size' => $cartonCosting->deckle_size,
+            'sheet_length' => $cartonCosting->sheet_length_manual,
+            'ups' => $cartonCosting->ups,
+            'paper_tax_rate' => $cartonCosting->paper_tax_rate,
+            'separator_cost' => $cartonCosting->separator_cost,
+            'honeycomb_cost' => $cartonCosting->honeycomb_cost,
             'wastage_rate' => $cartonCosting->wastage_rate,
             'overhead_rate' => $cartonCosting->overhead_rate,
             'profit_rate' => $cartonCosting->profit_rate,
@@ -399,6 +451,11 @@ class CartonCostingController extends Controller
             'cost_before_profit' => (float) $cartonCosting->cost_before_profit,
             'profit' => (float) $cartonCosting->profit_amount,
             'final_carton_cost' => (float) $cartonCosting->final_carton_cost,
+            'final_sheet_cost' => (float) $cartonCosting->cost_before_profit + (float) $cartonCosting->profit_amount,
+            'ups' => (int) $cartonCosting->ups,
+            'separator_cost' => (float) $cartonCosting->separator_cost,
+            'honeycomb_cost' => (float) $cartonCosting->honeycomb_cost,
+            'paper_tax_rate' => (float) $cartonCosting->paper_tax_rate,
             'wastage_rate_percent' => (float) $cartonCosting->wastage_rate,
             'overhead_rate_percent' => (float) $cartonCosting->overhead_rate,
             'profit_rate_percent' => (float) $cartonCosting->profit_rate,

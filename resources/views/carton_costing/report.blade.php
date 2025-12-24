@@ -51,6 +51,7 @@
                             <th>FEFCO Code</th>
                             <th>Ply</th>
                             <th>Dimensions (L × W × H mm)</th>
+                            <th>Deckle/Sheet/UPS</th>
                             <th class="text-end">Final Cost (₨)</th>
                             <th class="text-end">Created</th>
                             <th class="text-end">Actions</th>
@@ -64,6 +65,7 @@
                                 <td>{{ $costing->fefco_code }}</td>
                                 <td>{{ $costing->ply }}</td>
                                 <td>{{ number_format($costing->length, 2) }} × {{ number_format($costing->width, 2) }} × {{ number_format($costing->height, 2) }}</td>
+                                <td>{{ number_format($costing->deckle_size, 2) }}" / {{ number_format($costing->sheet_length_manual, 2) }}" / {{ $costing->ups }} ups</td>
                                 <td class="text-end">{{ number_format($costing->final_carton_cost, 2) }}</td>
                                 <td class="text-end">{{ $costing->created_at->format('d M Y, h:i A') }}</td>
                                 <td class="text-end">

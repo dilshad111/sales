@@ -45,7 +45,36 @@
             bottom: 0;
             left: 0;
             overflow-y: auto;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .layout-menu.collapsed {
+            width: 80px;
+        }
+
+        .layout-menu.collapsed .app-brand-text,
+        .layout-menu.collapsed .menu-header,
+        .layout-menu.collapsed .menu-link div {
+            display: none;
+        }
+
+        .layout-menu.collapsed .menu-icon {
+            margin-right: 0;
+            font-size: 1.4rem;
+        }
+
+        .layout-menu.collapsed .menu-item {
+            margin: 0.2rem 0.5rem;
+        }
+
+        .layout-menu.collapsed .menu-link {
+            justify-content: center;
+            padding: 0.625rem 0;
+        }
+
+        .layout-menu.collapsed .app-brand {
+            justify-content: center;
+            padding: 1.25rem 0;
         }
 
         .menu-inner {
@@ -116,6 +145,11 @@
             display: flex;
             flex-direction: column;
             min-width: 0;
+            transition: margin-left 0.2s ease-in-out;
+        }
+
+        .layout-menu.collapsed + .layout-page {
+            margin-left: 80px;
         }
 
         .layout-navbar {
@@ -335,6 +369,12 @@
                         <i class="fas fa-bars"></i>
                     </a>
                 </div>
+                
+                <div class="layout-menu-toggle navbar-nav align-items-center me-3 d-none d-xl-flex">
+                    <a class="nav-item nav-link px-0" href="javascript:void(0)" id="sidebar-toggle-btn">
+                        <i class="fas fa-bars"></i>
+                    </a>
+                </div>
 
                 <div class="navbar-nav-right d-flex align-items-center" id="navbar-collapse">
                     <div class="navbar-nav align-items-center">
@@ -469,6 +509,20 @@
                 localStorage.setItem('theme', 'dark');
                 icon.className = 'fas fa-sun fs-4 text-warning';
             }
+        });
+
+        // Sidebar Collapse Toggle
+        const sidebar = document.getElementById('layout-menu');
+        const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+        const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+
+        if (isCollapsed) {
+            sidebar.classList.add('collapsed');
+        }
+
+        sidebarToggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            localStorage.setItem('sidebar-collapsed', sidebar.classList.contains('collapsed'));
         });
     </script>
 </body>

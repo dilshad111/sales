@@ -69,8 +69,32 @@
             margin: 1rem;
             border-radius: 1rem;
             box-shadow: 0 20px 27px 0 rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
+            transition: all 0.2s ease-in-out;
             overflow-y: auto;
+        }
+
+        .sidenav.collapsed {
+            width: 80px;
+        }
+
+        .sidenav.collapsed .sidenav-brand-text,
+        .sidenav.collapsed .nav-link-text,
+        .sidenav.collapsed .menu-title,
+        .sidenav.collapsed hr.horizontal {
+            display: none !important;
+        }
+
+        .sidenav.collapsed .nav-link {
+            justify-content: center;
+            padding: 0.675rem 0;
+        }
+
+        .sidenav.collapsed .nav-link-icon {
+            margin-right: 0;
+        }
+
+        .sidenav.collapsed .sidenav-header {
+            padding: 1.5rem 0;
         }
 
         .sidenav-header {
@@ -139,7 +163,11 @@
         .main-content {
             margin-left: calc(var(--sidebar-width) + 2rem);
             padding: 1.5rem;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .sidenav.collapsed + .main-content {
+            margin-left: calc(80px + 2rem);
         }
 
         .navbar-main {
@@ -284,7 +312,12 @@
         <!-- Navbar -->
         <nav class="navbar navbar-main navbar-expand-lg px-0 mx-4 shadow-none border-radius-xl" id="navbarBlur" navbar-scroll="true">
             <div class="container-fluid py-1 px-3">
-                <nav aria-label="breadcrumb">
+                <nav aria-label="breadcrumb" class="d-flex align-items-center">
+                    <div class="sidenav-toggler-inner cursor-pointer me-3 d-none d-xl-block" id="sidebar-toggle-btn">
+                        <i class="sidenav-toggler-line"></i>
+                        <i class="sidenav-toggler-line"></i>
+                        <i class="sidenav-toggler-line"></i>
+                    </div>
                     <h6 class="font-weight-bolder mb-0">@yield('title')</h6>
                 </nav>
                 <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4" id="navbar">
@@ -375,5 +408,22 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Sidebar Collapse Toggle
+        const sidebar = document.getElementById('sidenav-main');
+        const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+        const isCollapsed = localStorage.getItem('sidebar-collapsed-soft-ui') === 'true';
+
+        if (isCollapsed) {
+            sidebar.classList.add('collapsed');
+        }
+
+        if (sidebarToggleBtn) {
+            sidebarToggleBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('collapsed');
+                localStorage.setItem('sidebar-collapsed-soft-ui', sidebar.classList.contains('collapsed'));
+            });
+        }
+    </script>
 </body>
 </html>
