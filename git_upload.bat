@@ -8,8 +8,9 @@ echo STAGING ALL CHANGES...
 git add .
 echo.
 
-set /p msg="Purchases form and report Updated"
-if "%msg%"=="" set msg="Update: %date% %time%"
+set msg=Purchases form and report Updated
+set /p msg="Enter commit message (Default: %msg%): "
+if "%msg%"=="" set msg=Update: %date% %time%
 
 echo.
 echo COMMITTING CHANGES...
