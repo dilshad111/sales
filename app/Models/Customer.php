@@ -22,4 +22,14 @@ class Customer extends Model implements Auditable
     {
         return $this->hasMany(Payment::class);
     }
+
+    public function account()
+    {
+        return $this->hasOne(Account::class, 'customer_id');
+    }
+
+    public function deliveryChallans()
+    {
+        return $this->hasMany(DeliveryChallan::class);
+    }
 }

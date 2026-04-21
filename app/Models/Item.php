@@ -30,4 +30,9 @@ class Item extends Model implements Auditable
     {
         return $this->belongsTo(Customer::class);
     }
+
+    public function billItems()
+    {
+        return $this->hasMany(BillItem::class);
+    }
 }

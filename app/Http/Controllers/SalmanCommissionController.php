@@ -34,24 +34,30 @@ class SalmanCommissionController extends Controller
     public function getCustomerBills(Request $request)
     {
         $customerId = $request->customer_id;
-        
-        $bills = Bill::where('customer_id', $customerId)
-            ->with(['commissionDetails.commission'])
-            ->orderBy('bill_date', 'desc')
-            ->get()
-            ->map(function ($bill) {
-                $commission = $bill->commissionDetails->first();
-                return [
-                    'id' => $bill->id,
-                    'bill_number' => $bill->bill_number,
-                    'bill_date' => $bill->bill_date->format('d/m/Y'),
-                    'total' => $bill->total,
-                    'is_commissioned' => !is_null($commission),
-                    'commission_id' => $commission ? $commission->commission_id : null,
-                ];
-            });
-            
-        return response()->json($bills);
+        \Log::info('Fetching bills for person', ['customer_id' => $customerId]);
+        try {
+            $bills = Bill::where('customer_id', $customerId)
+                ->with(['commissionDetails.commission'])
+                ->orderBy('bill_date', 'desc')
+                ->get()
+                ->map(function ($bill) {
+                    $commission = $bill->commissionDetails->first();
+                    return [
+                        'id' => $bill->id,
+                        'bill_number' => $bill->bill_number,
+                        'bill_date' => $bill->bill_date ? $bill->bill_date->format('d/m/Y') : 'N/A',
+                        'total' => (float)$bill->total,
+                        'is_commissioned' => !is_null($commission),
+                        'commission_id' => $commission ? $commission->commission_id : null,
+                    ];
+                });
+                
+            \Log::info('Found billsCount', ['count' => count($bills)]);
+            return response()->json($bills);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching customer bills: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function store(Request $request)
@@ -59,7 +65,7 @@ class SalmanCommissionController extends Controller
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'customer_id' => 'required|exists:customers,id',
-            'commission_date' => 'required|date',
+            'commission_date' => 'required|date|before_or_equal:today',
             'bills' => 'required|array',
             'bills.*.id' => 'required|exists:bills,id',
             'bills.*.percent' => 'required|numeric|min:0|max:100',
@@ -115,10 +121,13 @@ class SalmanCommissionController extends Controller
         return view('salman_commissions.show', compact('commission'));
     }
 
-    public function downloadPdf(Commission $commission)
+    public function downloadPdf(Request $request, Commission $commission)
     {
         $commission->load(['customer', 'user', 'details.bill.billItems.item']);
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('salman_commissions.pdf', compact('commission'));
+        if ($request->has('print')) {
+            return $pdf->stream('commission_bill_' . $commission->id . '.pdf');
+        }
         return $pdf->download('commission_bill_' . $commission->id . '.pdf');
     }
     

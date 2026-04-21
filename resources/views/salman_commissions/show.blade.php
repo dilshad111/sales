@@ -5,16 +5,16 @@
 @section('content')
 <div class="d-flex align-items-center justify-content-between mb-4">
     <h1 class="h2 mb-0 text-gray-800"><i class="fas fa-file-invoice me-2 text-primary"></i>Commission Bill Details</h1>
-    <div class="btn-group shadow-sm">
-        <a href="{{ route('salman_commissions.pdf', $commission) }}" class="btn btn-primary">
-            <i class="fas fa-download me-1"></i>Download PDF
+    <div class="d-flex flex-wrap gap-2 shadow-sm">
+        <a href="{{ route('salman_commissions.export_pdf', ['commission' => $commission->id, 'print' => 1]) }}" target="_blank" class="btn shadow-sm fw-bold border-0 text-white" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 6px; letter-spacing: 0.5px; padding: 8px 20px;">
+            <i class="fas fa-print me-1"></i>Print
         </a>
-        <a href="{{ route('salman_commissions.index') }}" class="btn btn-secondary">
+        <a href="{{ route('salman_commissions.export_pdf', ['commission' => $commission->id]) }}" class="btn shadow-sm fw-bold border-0 text-white" style="background: linear-gradient(135deg, #ff6a88 0%, #ff3a59 100%); border-radius: 6px; letter-spacing: 0.5px; padding: 8px 20px;">
+            <i class="fas fa-file-pdf me-1"></i>Download PDF
+        </a>
+        <a href="{{ route('salman_commissions.index') }}" class="btn btn-secondary shadow-sm text-white" style="border-radius: 6px; letter-spacing: 0.5px; padding: 8px 20px;">
             <i class="fas fa-arrow-left me-1"></i>Back
         </a>
-        <button class="btn btn-info" onclick="window.print()">
-            <i class="fas fa-print me-1"></i>Print
-        </button>
     </div>
 </div>
 
@@ -74,11 +74,11 @@
                                     <td class="text-center small text-muted">{{ $detail->bill->bill_number }}</td>
                                     <td class="text-end">{{ number_format($item->quantity) }}</td>
                                     <td class="text-end">{{ number_format($item->price, 2) }}</td>
-                                    <td class="text-end">Rs. {{ number_format($item->total, 2) }}</td>
+                                    <td class="text-end">{{ $companySetting->currency_symbol ?? 'Rs.' }} {{ number_format($item->total, 2) }}</td>
                                     <td class="text-center font-monospace">{{ number_format($detail->percentage, 2) }}%</td>
                                     <td class="text-end fw-bold">
                                         @php $itemComm = ($item->total * $detail->percentage) / 100; @endphp
-                                        Rs. {{ number_format($itemComm, 2) }}
+                                        {{ $companySetting->currency_symbol ?? 'Rs.' }} {{ number_format($itemComm, 2) }}
                                     </td>
                                 </tr>
                                 @endforeach
@@ -87,7 +87,7 @@
                         <tfoot>
                             <tr class="h4">
                                 <th colspan="7" class="text-end py-3">Total Payable Commission:</th>
-                                <th class="text-end py-3 text-success">Rs. {{ number_format($commission->amount, 2) }}</th>
+                                <th class="text-end py-3 text-success">{{ $companySetting->currency_symbol ?? 'Rs.' }} {{ number_format($commission->amount, 2) }}</th>
                             </tr>
                         </tfoot>
                     </table>

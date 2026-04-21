@@ -43,25 +43,52 @@
                     
                     <div class="row">
                         @foreach($menuGroups as $groupName => $groupMenus)
-                        <div class="col-md-6 mb-4">
-                            <h6 class="border-bottom pb-2 mb-3 fw-bold text-primary">
-                                <i class="fas fa-folder-open me-2"></i>{{ $groupName }}
+                        <div class="col-12 mb-4">
+                            <h6 class="bg-light p-2 fw-bold text-dark border-start border-4 border-primary shadow-sm mb-3">
+                                <i class="fas fa-folder-open me-2 text-primary"></i>{{ $groupName }}
                             </h6>
-                            <div class="ps-2">
-                                @foreach($groupMenus as $menuKey)
-                                    @php $menu = $menus[$menuKey] ?? null; @endphp
-                                    @if($menu)
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" name="menu_permissions[]" 
-                                               value="{{ $menuKey }}" id="perm_{{ $menuKey }}"
-                                               {{ $selectedUser->hasMenuPermission($menuKey) ? 'checked' : '' }}>
-                                        <label class="form-check-label d-flex align-items-center" for="perm_{{ $menuKey }}">
-                                            <i class="{{ $menu['icon'] }} me-2 text-muted" style="width: 20px;"></i>
-                                            {{ $menu['label'] }}
-                                        </label>
-                                    </div>
-                                    @endif
-                                @endforeach
+                            <div class="table-responsive">
+                                <table class="table table-hover table-sm align-middle border">
+                                    <thead class="bg-light small text-uppercase fw-bold text-muted">
+                                        <tr>
+                                            <th class="ps-3" style="width: 40%;">Module / Section</th>
+                                            <th class="text-center">View</th>
+                                            <th class="text-center">Edit</th>
+                                            <th class="text-center">Delete</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($groupMenus as $menuKey)
+                                            @php $menu = $menus[$menuKey] ?? null; @endphp
+                                            @if($menu)
+                                            <tr>
+                                                <td class="ps-3 fw-semibold">
+                                                    <i class="{{ $menu['icon'] }} {{ $menu['color'] }} me-2 opacity-75" style="width: 20px;"></i>
+                                                    {{ $menu['label'] }}
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="form-check d-inline-block">
+                                                        <input class="form-check-input" type="checkbox" name="menu_permissions[{{ $menuKey }}][view]" value="1" 
+                                                            {{ $selectedUser->hasMenuPermission($menuKey, 'view') ? 'checked' : '' }}>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="form-check d-inline-block">
+                                                        <input class="form-check-input" type="checkbox" name="menu_permissions[{{ $menuKey }}][edit]" value="1" 
+                                                            {{ $selectedUser->hasMenuPermission($menuKey, 'edit') ? 'checked' : '' }}>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="form-check d-inline-block">
+                                                        <input class="form-check-input" type="checkbox" name="menu_permissions[{{ $menuKey }}][delete]" value="1" 
+                                                            {{ $selectedUser->hasMenuPermission($menuKey, 'delete') ? 'checked' : '' }}>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            @endif
+                                        @endforeach
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                         @endforeach

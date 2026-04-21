@@ -80,7 +80,7 @@
         <tfoot>
             <tr style="font-size: 12px; background-color: #f8f9fa;">
                 <th colspan="7" class="text-right" style="padding: 10px;">Total Payable Commission:</th>
-                <th class="text-right text-success" style="padding: 10px;">Rs. {{ number_format($commission->amount, 2) }}</th>
+                <th class="text-right text-success" style="padding: 10px;">{{ $companySetting->currency_symbol ?? 'Rs.' }} {{ number_format($commission->amount, 2) }}</th>
             </tr>
         </tfoot>
     </table>

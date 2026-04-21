@@ -10,7 +10,7 @@ class ThemeController extends Controller
     public function update(Request $request)
     {
         $request->validate([
-            'theme' => 'required|string|in:sneat,soft-ui'
+            'theme' => 'required|string|in:sneat'
         ]);
 
         $user = Auth::user();

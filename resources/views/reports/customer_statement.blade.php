@@ -3,11 +3,40 @@
 @section('title', 'Customer Statement')
 
 @section('content')
-<h1><i class="fas fa-file-invoice-dollar me-2"></i>Customer Statement</h1>
-
-@if($customer)
-<a href="{{ route('reports.customer_statement_pdf', request()->query()) }}" class="btn btn-primary mb-3"><i class="fas fa-download me-1"></i>Download PDF</a>
-@endif
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body py-3">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div>
+                <nav aria-label="breadcrumb" class="mb-1">
+                    <ol class="breadcrumb mb-0" style="font-size: 0.75rem;">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('reports.sales') }}">Reports</a></li>
+                        <li class="breadcrumb-item active">Customer Statement</li>
+                    </ol>
+                </nav>
+                <h3 class="h4 mb-0 fw-bold text-gray-800 d-flex align-items-center">
+                    <span class="bg-success bg-opacity-10 p-2 rounded-3 me-2">
+                        <i class="fas fa-file-invoice-dollar text-success fa-sm"></i>
+                    </span>
+                    Customer Statement
+                </h3>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                @if($customer)
+                <a href="{{ route('reports.customer_statement_pdf', array_merge(request()->query(), ['print' => 1])) }}" target="_blank" class="btn btn-sm px-4 py-2 shadow-sm fw-bold border-0 text-white" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 6px; letter-spacing: 0.5px;">
+                    <i class="fas fa-print me-1"></i>Print
+                </a>
+                <a href="{{ route('reports.customer_statement_pdf', request()->query()) }}" class="btn btn-sm px-4 py-2 shadow-sm fw-bold border-0 text-white" style="background: linear-gradient(135deg, #ff6a88 0%, #ff3a59 100%); border-radius: 6px; letter-spacing: 0.5px;">
+                    <i class="fas fa-file-pdf me-1"></i>Download PDF
+                </a>
+                <a href="{{ route('reports.customer_statement_excel', request()->query()) }}" class="btn btn-sm px-4 py-2 shadow-sm fw-bold border-0 text-white" style="background: linear-gradient(135deg, #1d976c 0%, #93f9b9 100%); border-radius: 6px; letter-spacing: 0.5px;">
+                    <i class="fas fa-file-excel me-1"></i>Export Excel
+                </a>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
 
 <form method="GET" class="mb-4">
     <div class="card">
@@ -96,7 +125,7 @@
                 </thead>
                 <tbody>
                     @forelse($transactions as $index => $transaction)
-                    <tr class="{{ $transaction['type'] == 'payment' ? 'table-success' : '' }}">
+                    <tr class="{{ $transaction['type'] == 'opening_balance' ? 'table-info fw-bold' : ($transaction['type'] == 'payment' ? 'table-success' : '') }}">
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td class="text-center">{{ \Carbon\Carbon::parse($transaction['date'])->format('d/m/Y') }}</td>
                         <td class="text-center">{{ $transaction['bill_no'] }}</td>
@@ -110,27 +139,27 @@
                         </td>
                         <td class="text-end">
                             @if($transaction['rate'] !== '-')
-                                ₨{{ number_format($transaction['rate'], 2) }}
+                                {{ $companySetting->currency_symbol ?? 'Rs.' }} {{ number_format($transaction['rate'], 2) }}
                             @else
                                 -
                             @endif
                         </td>
                         <td class="text-end">
                             @if($transaction['sales_amount'] > 0)
-                                ₨{{ number_format($transaction['sales_amount'], 2) }}
+                                {{ $companySetting->currency_symbol ?? 'Rs.' }} {{ number_format($transaction['sales_amount'], 2) }}
                             @else
                                 -
                             @endif
                         </td>
                         <td class="text-end">
                             @if($transaction['payment_received'] > 0)
-                                <span class="text-success fw-bold">₨{{ number_format($transaction['payment_received'], 2) }}</span>
+                                <span class="text-success fw-bold">{{ $companySetting->currency_symbol ?? 'Rs.' }} {{ number_format($transaction['payment_received'], 2) }}</span>
                             @else
                                 -
                             @endif
                         </td>
                         <td class="text-end fw-bold {{ $transaction['balance'] > 0 ? 'text-danger' : ($transaction['balance'] < 0 ? 'text-success' : '') }}">
-                            ₨{{ number_format($transaction['balance'], 2) }}
+                            {{ $companySetting->currency_symbol ?? 'Rs.' }} {{ number_format($transaction['balance'], 2) }}
                         </td>
                     </tr>
                     @empty
@@ -143,10 +172,10 @@
                 <tfoot class="table-secondary">
                     <tr>
                         <th colspan="6" class="text-end">Total:</th>
-                        <th class="text-end">₨{{ number_format($transactions->sum('sales_amount'), 2) }}</th>
-                        <th class="text-end text-success">₨{{ number_format($transactions->sum('payment_received'), 2) }}</th>
+                        <th class="text-end">{{ $companySetting->currency_symbol ?? 'Rs.' }} {{ number_format($transactions->sum('sales_amount'), 2) }}</th>
+                        <th class="text-end text-success">{{ $companySetting->currency_symbol ?? 'Rs.' }} {{ number_format($transactions->sum('payment_received'), 2) }}</th>
                         <th class="text-end fw-bold {{ $transactions->last()['balance'] > 0 ? 'text-danger' : ($transactions->last()['balance'] < 0 ? 'text-success' : '') }}">
-                            ₨{{ number_format($transactions->last()['balance'], 2) }}
+                            {{ $companySetting->currency_symbol ?? 'Rs.' }} {{ number_format($transactions->last()['balance'], 2) }}
                         </th>
                     </tr>
                 </tfoot>
@@ -161,9 +190,9 @@
     <i class="fas fa-info-circle me-2"></i>
     <strong>Note:</strong> 
     @if($transactions->last()['balance'] > 0)
-        Outstanding balance of <strong>₨{{ number_format($transactions->last()['balance'], 2) }}</strong> is due from the customer.
+        Outstanding balance of <strong>{{ $companySetting->currency_symbol ?? 'Rs.' }} {{ number_format($transactions->last()['balance'], 2) }}</strong> is due from the customer.
     @elseif($transactions->last()['balance'] < 0)
-        Customer has a credit balance of <strong>₨{{ number_format(abs($transactions->last()['balance']), 2) }}</strong>.
+        Customer has a credit balance of <strong>{{ $companySetting->currency_symbol ?? 'Rs.' }} {{ number_format(abs($transactions->last()['balance']), 2) }}</strong>.
     @else
         Account is fully settled.
     @endif
@@ -176,4 +205,9 @@
 </div>
 @endif
 
+<style>
+    .table td.text-end {
+        white-space: nowrap !important;
+    }
+</style>
 @endsection

@@ -13,9 +13,9 @@ use Illuminate\View\View;
 class CartonCostingController extends Controller
 {
     private const PLY_ALLOWANCES = [
-        3 => 22, // 12 + 10
-        5 => 30, // 20 + 10
-        7 => 32, // 22 + 10
+        3 => 12,
+        5 => 20,
+        7 => 25,
     ];
 
     private const FLUTE_FACTORS = [
@@ -70,6 +70,8 @@ class CartonCostingController extends Controller
             'wastage_rate' => ['required', 'numeric', 'gte:0'],
             'overhead_rate' => ['required', 'numeric', 'gte:0'],
             'profit_rate' => ['required', 'numeric', 'gte:0'],
+            'flute_factors' => ['required', 'array'],
+            'flute_factors.*' => ['required', 'numeric', 'gte:1'],
             'layers' => ['required', 'array', 'size:' . count($layerTemplates[$ply])],
             'layers.*.quality' => ['required', 'string', 'max:255'],
             'layers.*.gsm' => ['required', 'numeric', 'gte:0'],
@@ -78,7 +80,7 @@ class CartonCostingController extends Controller
 
         foreach ($layerTemplates[$ply] as $index => $template) {
             $rules["layers.$index.flute"] = $template['is_flute']
-                ? ['required', Rule::in(array_keys(self::FLUTE_FACTORS))]
+                ? ['required', Rule::in(array_keys($request->input('flute_factors', self::FLUTE_FACTORS)))]
                 : ['nullable'];
         }
 
@@ -98,7 +100,7 @@ class CartonCostingController extends Controller
             'fefcoCodes' => $this->getFefcoCodes(),
             'layerTemplates' => $layerTemplates,
             'formData' => $formData,
-            'fluteFactors' => self::FLUTE_FACTORS,
+            'fluteFactors' => (array) $request->input('flute_factors', self::FLUTE_FACTORS),
             'result' => $calculation,
             'customers' => Customer::orderBy('name')->get(),
             'editMode' => (bool) $cartonCostingId,
@@ -132,6 +134,8 @@ class CartonCostingController extends Controller
             'wastage_rate' => ['required', 'numeric', 'gte:0'],
             'overhead_rate' => ['required', 'numeric', 'gte:0'],
             'profit_rate' => ['required', 'numeric', 'gte:0'],
+            'flute_factors' => ['required', 'array'],
+            'flute_factors.*' => ['required', 'numeric', 'gte:1'],
             'layers' => ['required', 'array', 'size:' . count($layerTemplates[$ply])],
             'layers.*.quality' => ['required', 'string', 'max:255'],
             'layers.*.gsm' => ['required', 'numeric', 'gte:0'],
@@ -140,7 +144,7 @@ class CartonCostingController extends Controller
 
         foreach ($layerTemplates[$ply] as $index => $template) {
             $rules["layers.$index.flute"] = $template['is_flute']
-                ? ['required', Rule::in(array_keys(self::FLUTE_FACTORS))]
+                ? ['required', Rule::in(array_keys($request->input('flute_factors', self::FLUTE_FACTORS)))]
                 : ['nullable'];
         }
 
@@ -183,6 +187,7 @@ class CartonCostingController extends Controller
             'profit_amount' => $calculation['profit'],
             'final_carton_cost' => $calculation['final_carton_cost'],
             'layers' => $calculation['layers'],
+            'flute_factors' => $validated['flute_factors'],
         ];
 
         if ($cartonCostingId) {
@@ -238,7 +243,7 @@ class CartonCostingController extends Controller
             'fefcoCodes' => $this->getFefcoCodes(),
             'layerTemplates' => $layerTemplates,
             'formData' => $formData,
-            'fluteFactors' => self::FLUTE_FACTORS,
+            'fluteFactors' => $cartonCosting->flute_factors ?? self::FLUTE_FACTORS,
             'result' => $result,
             'customers' => Customer::orderBy('name')->get(),
             'editMode' => true,
@@ -293,7 +298,8 @@ class CartonCostingController extends Controller
             $weightKg = ($gsm * $sheetArea) / 1000;
 
             $isFlute = $layerTemplate[$index]['is_flute'];
-            $fluteFactor = $isFlute ? self::FLUTE_FACTORS[$layerInput['flute']] : 1.0;
+            $factors = (array) ($data['flute_factors'] ?? self::FLUTE_FACTORS);
+            $fluteFactor = $isFlute ? (float) ($factors[$layerInput['flute']] ?? 1.0) : 1.0;
 
             $adjustedWeight = $weightKg * $fluteFactor;
             $layerCost = $adjustedWeight * $rateExcludingGst;
@@ -394,6 +400,7 @@ class CartonCostingController extends Controller
                 'rate' => null,
                 'flute' => null,
             ], $templates[$ply]),
+            'flute_factors' => self::FLUTE_FACTORS,
         ];
     }
 
@@ -432,6 +439,7 @@ class CartonCostingController extends Controller
             'overhead_rate' => $cartonCosting->overhead_rate,
             'profit_rate' => $cartonCosting->profit_rate,
             'layers' => $layers,
+            'flute_factors' => $cartonCosting->flute_factors ?? self::FLUTE_FACTORS,
         ];
     }
 

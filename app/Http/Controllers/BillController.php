@@ -3,9 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bill;
+use App\Models\BillExpense;
 use App\Models\BillItem;
 use App\Models\Customer;
 use App\Models\Item;
+use App\Models\Transaction;
+use App\Models\TransactionEntry;
+use App\Models\Account;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -32,7 +36,8 @@ class BillController extends Controller
             $query->where('bill_date', '<=', $request->end_date);
         }
 
-        $bills = $query->paginate(10);
+        $perPage = $request->input('per_page', 20);
+        $bills = $query->orderBy('bill_date', 'desc')->orderBy('id', 'desc')->paginate($perPage)->withQueryString();
         $customers = Customer::all();
 
         return view('bills.index', compact('bills', 'customers'));
@@ -46,7 +51,9 @@ class BillController extends Controller
         $customers = Customer::where('status', 'active')
             ->where('type', 'Un-Official')
             ->get();
-        $nextBillNumber = 'BILL' . str_pad(Bill::count() + 1, 4, '0', STR_PAD_LEFT);
+        $setting = \App\Models\CompanySetting::first();
+        $prefix = $setting ? ($setting->bill_prefix ?? 'INV') : 'INV';
+        $nextBillNumber = $prefix . str_pad(Bill::count() + 1, 4, '0', STR_PAD_LEFT);
 
         return view('bills.create', compact('customers', 'nextBillNumber'));
     }
@@ -96,15 +103,24 @@ class BillController extends Controller
                 return $item;
             })->toArray();
 
+            $sanitizedExpenses = collect($request->input('expenses', []))->map(function ($expense) use ($sanitizeDecimal) {
+                return [
+                    'description' => $expense['description'] ?? null,
+                    'amount' => $sanitizeDecimal($expense['amount'] ?? 0),
+                ];
+            })->toArray();
+
             $request->merge([
                 'discount' => $sanitizeDecimal($request->discount ?? 0),
                 'tax' => $sanitizeDecimal($request->tax ?? 0),
+                'tax_percent' => $sanitizeDecimal($request->tax_percent ?? 0),
                 'items' => $sanitizedItems,
+                'expenses' => $sanitizedExpenses,
             ]);
 
             $validated = $request->validate([
                 'customer_id' => 'required|exists:customers,id',
-                'bill_date' => 'required|date',
+                'bill_date' => 'required|date|before_or_equal:today',
                 'items' => 'required|array|min:1',
                 'items.*.item_id' => 'required|exists:items,id',
                 'items.*.quantity' => 'required|integer|min:1',
@@ -113,46 +129,68 @@ class BillController extends Controller
                 'items.*.remarks' => 'nullable|string|max:255',
                 'discount' => 'nullable|numeric',
                 'tax' => 'nullable|numeric',
+                'tax_percent' => 'nullable|numeric|min:0|max:100',
+                'expenses' => 'nullable|array',
+                'expenses.*.description' => 'nullable|string|max:255',
+                'expenses.*.amount' => 'nullable|numeric|min:0',
             ]);
             
             \Log::info('Validation passed', ['validated_data' => $validated]);
 
             DB::beginTransaction();
             try {
-            $subtotal = 0;
+                $subtotal = 0;
 
-            $discount = $validated['discount'] ?? 0;
-            $tax = $validated['tax'] ?? 0;
+                $discount = $validated['discount'] ?? 0;
+                $tax = $validated['tax'] ?? 0;
+                $tax_percent = $validated['tax_percent'] ?? 0;
 
-            $bill = Bill::create([
-                'customer_id' => $validated['customer_id'],
-                'bill_date' => $validated['bill_date'],
-                'total' => 0, // temporary, update after calculating items
-                'discount' => $discount,
-                'tax' => $tax,
-            ]);
-
-            foreach ($validated['items'] as $itemData) {
-                $item = Item::find($itemData['item_id']);
-
-                $quantity = (int) $itemData['quantity'];
-                $rate = (float) $itemData['rate'];
-                $lineTotal = $rate * $quantity;
-
-                $subtotal += $lineTotal;
-
-                BillItem::create([
-                    'bill_id' => $bill->id,
-                    'item_id' => $itemData['item_id'],
-                    'quantity' => $quantity,
-                    'price' => $rate,
-                    'total' => $lineTotal,
-                    'delivery_date' => $itemData['delivery_date'] ?? null,
-                    'remarks' => $itemData['remarks'] ?? null,
+                $bill = Bill::create([
+                    'customer_id' => $validated['customer_id'],
+                    'bill_date' => $validated['bill_date'],
+                    'total' => 0, // temporary, update after calculating items
+                    'discount' => $discount,
+                    'tax' => $tax,
+                    'tax_percent' => $tax_percent,
                 ]);
-            }
 
-                $finalTotal = $subtotal - $discount + $tax;
+                foreach ($validated['items'] as $itemData) {
+                    $item = Item::find($itemData['item_id']);
+
+                    $quantity = (int) $itemData['quantity'];
+                    $rate = (float) $itemData['rate'];
+                    $lineTotal = $rate * $quantity;
+
+                    $subtotal += $lineTotal;
+
+                    BillItem::create([
+                        'bill_id' => $bill->id,
+                        'item_id' => $itemData['item_id'],
+                        'quantity' => $quantity,
+                        'price' => $rate,
+                        'total' => $lineTotal,
+                        'delivery_date' => $itemData['delivery_date'] ?? null,
+                        'remarks' => $itemData['remarks'] ?? null,
+                    ]);
+                }
+
+                // Save additional expenses
+                $expensesTotal = 0;
+                if (!empty($validated['expenses'])) {
+                    foreach ($validated['expenses'] as $expense) {
+                        if (!empty($expense['description']) && isset($expense['amount'])) {
+                            $expenseAmount = (float) $expense['amount'];
+                            BillExpense::create([
+                                'bill_id' => $bill->id,
+                                'description' => $expense['description'],
+                                'amount' => $expenseAmount,
+                            ]);
+                            $expensesTotal += $expenseAmount;
+                        }
+                    }
+                }
+
+                $finalTotal = $subtotal - $discount + $tax + $expensesTotal;
 
                 $bill->update([
                     'total' => $finalTotal,
@@ -170,7 +208,6 @@ class BillController extends Controller
                     'trace' => $e->getTraceAsString()
                 ]);
                 
-                // Return back with error message
                 return back()->withInput()->with('error', 'Error creating bill: ' . $e->getMessage());
             }
             
@@ -193,7 +230,7 @@ class BillController extends Controller
      */
     public function show(Bill $bill)
     {
-        $bill->load('customer', 'billItems.item');
+        $bill->load('customer', 'billItems.item', 'billExpenses');
 
         return view('bills.show', compact('bill'));
     }
@@ -203,7 +240,7 @@ class BillController extends Controller
      */
     public function edit(Bill $bill)
     {
-        $bill->load('billItems.item');
+        $bill->load('billItems.item', 'billExpenses');
 
         $customers = Customer::where('status', 'active')
             ->where('type', 'Un-Official')
@@ -255,15 +292,24 @@ class BillController extends Controller
                 ];
             })->toArray();
 
+            $sanitizedExpenses = collect($request->input('expenses', []))->map(function ($expense) use ($sanitizeDecimal) {
+                return [
+                    'description' => $expense['description'] ?? null,
+                    'amount' => $sanitizeDecimal($expense['amount'] ?? 0),
+                ];
+            })->toArray();
+
             $request->merge([
                 'discount' => $sanitizeDecimal($request->discount ?? 0),
                 'tax' => $sanitizeDecimal($request->tax ?? 0),
+                'tax_percent' => $sanitizeDecimal($request->tax_percent ?? 0),
                 'items' => $sanitizedItems,
+                'expenses' => $sanitizedExpenses,
             ]);
 
             $validated = $request->validate([
                 'customer_id' => 'required|exists:customers,id',
-                'bill_date' => 'required|date',
+                'bill_date' => 'required|date|before_or_equal:today',
                 'items' => 'required|array|min:1',
                 'items.*.item_id' => 'required|exists:items,id',
                 'items.*.quantity' => 'required|integer|min:1',
@@ -272,6 +318,10 @@ class BillController extends Controller
                 'items.*.remarks' => 'nullable|string|max:255',
                 'discount' => 'nullable|numeric',
                 'tax' => 'nullable|numeric',
+                'tax_percent' => 'nullable|numeric|min:0|max:100',
+                'expenses' => 'nullable|array',
+                'expenses.*.description' => 'nullable|string|max:255',
+                'expenses.*.amount' => 'nullable|numeric|min:0',
             ]);
             
             \Log::info('Validation passed', ['validated_data' => $validated]);
@@ -280,12 +330,14 @@ class BillController extends Controller
             try {
                 $discount = $validated['discount'] ?? 0;
                 $tax = $validated['tax'] ?? 0;
+                $tax_percent = $validated['tax_percent'] ?? 0;
 
                 $bill->update([
                     'customer_id' => $validated['customer_id'],
                     'bill_date' => $validated['bill_date'],
                     'discount' => $discount,
                     'tax' => $tax,
+                    'tax_percent' => $tax_percent,
                     'total' => 0,
                 ]);
 
@@ -312,7 +364,25 @@ class BillController extends Controller
                     ]);
                 }
 
-                $finalTotal = $subtotal - $discount + $tax;
+                // Delete old expenses then re-save
+                $bill->billExpenses()->delete();
+
+                $expensesTotal = 0;
+                if (!empty($validated['expenses'])) {
+                    foreach ($validated['expenses'] as $expense) {
+                        if (!empty($expense['description']) && isset($expense['amount'])) {
+                            $expenseAmount = (float) $expense['amount'];
+                            BillExpense::create([
+                                'bill_id' => $bill->id,
+                                'description' => $expense['description'],
+                                'amount' => $expenseAmount,
+                            ]);
+                            $expensesTotal += $expenseAmount;
+                        }
+                    }
+                }
+
+                $finalTotal = $subtotal - $discount + $tax + $expensesTotal;
 
                 $bill->update([
                     'total' => $finalTotal,
@@ -352,14 +422,41 @@ class BillController extends Controller
      */
     public function destroy(Bill $bill)
     {
-        $bill->delete();
+        try {
+            \DB::beginTransaction();
 
-        return redirect()->route('bills.index')->with('success', 'Bill deleted successfully.');
+            \Log::info('Attempting to delete bill', ['bill_id' => $bill->id, 'bill_number' => $bill->bill_number]);
+
+            // Explicitly delete related items to be safe, although DB cascade is set
+            $bill->billItems()->delete();
+            $bill->payments()->delete();
+            $bill->commissionDetails()->delete();
+
+            // Reset associated delivery challans to pending if they exist
+            \App\Models\DeliveryChallan::where('bill_id', $bill->id)->update([
+                'status' => 'pending',
+                'bill_id' => null
+            ]);
+
+            $bill->delete();
+
+            \DB::commit();
+            \Log::info('Bill deleted successfully from controller', ['bill_id' => $bill->id]);
+
+            return redirect()->route('bills.index')->with('success', 'Bill deleted successfully. Associated delivery challans have been restored to pending.');
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            \Log::error('Error deleting bill: ' . $e->getMessage(), [
+                'bill_id' => $bill->id,
+                'exception' => $e
+            ]);
+            return redirect()->route('bills.index')->with('error', 'Error deleting bill: ' . $e->getMessage());
+        }
     }
 
     public function downloadPdf(Bill $bill)
     {
-        $bill->load('customer', 'billItems.item');
+        $bill->load('customer', 'billItems.item', 'billExpenses');
 
         $pdf = Pdf::loadView('bills.pdf', compact('bill'))
         ->setPaper('a4', 'portrait');
@@ -369,7 +466,7 @@ class BillController extends Controller
 
     public function print(Bill $bill)
     {
-        $bill->load('customer', 'billItems.item');
+        $bill->load('customer', 'billItems.item', 'billExpenses');
 
         return view('bills.print', compact('bill'));
     }

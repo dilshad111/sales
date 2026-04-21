@@ -1,151 +1,260 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bill {{ $bill->bill_number }}</title>
+    <meta charset="utf-8">
+    <title>Invoice {{ $bill->bill_number }}</title>
     <style>
+        @page {
+            margin: 0.5cm;
+        }
         body {
-            font-family: Arial, sans-serif;
-            margin: 5mm;
-            position: relative;
+            font-family: 'DejaVu Sans', sans-serif;
+            font-size: 9pt;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            line-height: 1.4;
+        }
+        .container {
+            padding: 10px 20px;
         }
         .header {
             text-align: center;
-            margin-bottom: 5px;
-        }
-        .company {
-            font-size: 28px;
-            font-weight: bold;
-        }
-        .address {
-            font-size: 16px;
-        }
-        hr {
-            border: 0;
-            border-top: 1px solid #000;
-            margin: 10px auto;
-        }
-        .details {
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 10px;
             margin-bottom: 20px;
         }
-        table {
+        .logo {
+            max-height: 70px;
+            margin-bottom: 5px;
+        }
+        .company-name {
+            font-size: 20pt;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .company-details {
+            font-size: 8.5pt;
+            color: #555;
+            margin: 2px 0;
+        }
+        .invoice-banner {
+            text-align: center;
+            margin: 15px 0;
+        }
+        .invoice-title {
+            display: inline-block;
+            font-size: 16pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #fff;
+            background-color: #2c3e50;
+            padding: 5px 30px;
+            border-radius: 4px;
+        }
+        .info-table {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .info-table td {
+            border: none;
+            padding: 0;
+            vertical-align: top;
+        }
+        .section-title {
+            font-size: 8pt;
+            font-weight: bold;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 5px;
+            padding-bottom: 2px;
+        }
+        .info-content {
+            font-size: 10pt;
+        }
+        table.items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
-        th, td {
-            border: 1px solid #000;
-            padding: 5px 6px;
-            text-align: left;
-        }
-        thead th {
+        .items-table th {
+            background-color: #f1f1f1;
+            color: #2c3e50;
             font-weight: bold;
+            text-transform: uppercase;
+            font-size: 8pt;
+            padding: 10px 8px;
+            border: 1px solid #ccc;
             text-align: center;
         }
-        tbody td {
-            font-size: 12.825px;
+        .items-table td {
+            padding: 8px;
+            border: 1px solid #eee;
+            word-wrap: break-word;
         }
-        .qty-cell,
-        .price-cell {
-            font-size: 15px;
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .summary-wrapper {
+            float: right;
+            width: 40%;
+        }
+        .summary-table td {
+            border: none;
+            padding: 4px 0;
+        }
+        .grand-total {
+            font-size: 14pt;
             font-weight: bold;
-            text-align: right;
-        }
-        .text-right {
-            text-align: right;
-        }
-        .text-center {
-            text-align: center;
-        }
-        .total {
-            font-weight: bold;
-        }
-        .total-amount-cell {
-            font-size: 16.2px;
-            font-weight: bold;
+            color: #2c3e50;
+            border-top: 2px solid #2c3e50 !important;
+            padding-top: 10px !important;
         }
         .footer {
             position: fixed;
-            left: 6mm;
-            right: 3mm;
-            bottom: 3mm;
-            font-size: 11px;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
             text-align: center;
-            font-style: italic;
+            font-size: 7.5pt;
+            color: #95a5a6;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+        .clearfix::after {
+            content: "";
+            clear: both;
+            display: table;
         }
     </style>
 </head>
 <body>
-    @php
-        $billItems = $bill->billItems;
-        $totalQuantity = $billItems->sum('quantity');
-        $totalAmount = $billItems->sum('total');
-    @endphp
-    <div class="header">
-        <div class="company">{{ $companySetting->name }}</div>
-        <div class="address">{{ $companySetting->address }}</div>
-        <hr>
-        <h2 style="margin: 5px 0;">Sales Bill</h2>
-    </div>
-    <div class="details">
-        <table style="border: none; margin-bottom: 5px;">
+    <div class="container">
+        <div class="header">
+            @if(extension_loaded('gd') && $companySetting->logo_path)
+                <img src="{{ storage_path('app/public/' . $companySetting->logo_path) }}" class="logo">
+            @endif
+            <div class="company-name">{{ $companySetting->name }}</div>
+            <div class="company-details">{{ $companySetting->address }}</div>
+            <div class="company-details">Phone: {{ $companySetting->phone }} | Email: {{ $companySetting->email }}</div>
+            @if($companySetting->tax_number)
+                <div class="company-details">STRN/NTN: {{ $companySetting->tax_number }}</div>
+            @endif
+        </div>
+
+        <div class="invoice-banner">
+            <div class="invoice-title">Sales Invoice</div>
+        </div>
+
+        <table class="info-table">
             <tr>
-                <td style="border: none; padding: 0;">
-                    <span style="font-size: 18px; font-weight: bold;">Bill #:</span>
-                    <span style="font-size: 17px;">{{ $bill->bill_number }}</span>
+                <td style="width: 50%;">
+                    <div class="section-title">Bill To</div>
+                    <div class="info-content">
+                        <strong>{{ optional($bill->customer)->name ?? 'Walk-in Customer' }}</strong><br>
+                        {{ optional($bill->customer)->address }}<br>
+                        Ph: {{ optional($bill->customer)->phone }}
+                    </div>
                 </td>
-                <td style="border: none; padding: 0;" class="text-right">
-                    <span style="font-size: 18px; font-weight: bold;">Date:</span>
-                    <span style="font-size: 17px;">{{ $bill->bill_date->format('d/m/Y') }}</span>
+                <td style="width: 50%; text-align: right;">
+                    <div class="section-title" style="text-align: right;">Invoice Details</div>
+                    <div class="info-content">
+                        <strong>Invoice #: {{ $bill->bill_number }}</strong><br>
+                        Date: {{ $bill->bill_date->format('d/m/Y') }}<br>
+                        @php $totalPaid = $bill->payments->sum('amount'); @endphp
+                        Status: <span style="color: {{ $totalPaid >= $bill->total ? '#27ae60' : ($totalPaid > 0 ? '#f39c12' : '#c0392b') }}">
+                            {{ $totalPaid >= $bill->total ? 'FULLY PAID' : ($totalPaid > 0 ? 'PARTIALLY PAID' : 'UNPAID') }}
+                        </span>
+                    </div>
                 </td>
             </tr>
         </table>
-        <p style="margin: 0;"><strong>Customer:</strong> {{ optional($bill->customer)->name ?? 'Customer Deleted' }}</p>
-        <p style="margin: 0 0 10px 0;">{{ optional($bill->customer)->address ?? 'Address unavailable' }}</p>
-    </div>
-    <table>
-        <thead>
-            <tr>
-                <th style="width: 17px;">S.No.</th>
-                <th style="width: 275px;">Item Name</th>
-                <th style="width: 70px;">Delivery Date</th>
-                <th style="width: 50px;">Quantity</th>
-                <th style="width: 24px;">Price/each</th>
-                <th style="width: 80px;">Total Amount</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($billItems as $item)
-            <tr>
-                <td class="text-center" style="font-style: italic;font-size: 17px;">{{ $loop->iteration }}</td>
-                <td>
-                    <div>{{ optional($item->item)->name ?? 'Item Deleted' }}</div>
-                    @if(!empty($item->remarks))
-                        <div style="margin-top: 3px; font-size: 14px; color: #000000ff;"> {{ $item->remarks }}</div>
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">S#</th>
+                    <th style="width: 45%;">Description</th>
+                    <th style="width: 15%;">Quantity</th>
+                    <th style="width: 15%;">Rate</th>
+                    <th style="width: 20%;">Total Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($bill->billItems as $index => $item)
+                <tr>
+                    <td class="text-center">{{ $index + 1 }}</td>
+                    <td>
+                        <strong>{{ optional($item->item)->name }}</strong>
+                        @if($item->remarks) <br><small style="color: #666;">{{ $item->remarks }}</small> @endif
+                    </td>
+                    <td class="text-center">{{ number_format($item->quantity) }}</td>
+                    <td class="text-right">{{ number_format($item->price, 2) }}</td>
+                    <td class="text-right fw-bold">{{ number_format($item->total, 2) }}</td>
+                </tr>
+                @endforeach
+                @foreach($bill->billExpenses as $expense)
+                <tr>
+                    <td class="text-center text-muted">+</td>
+                    <td colspan="3">{{ $expense->description }} (Additional Expense)</td>
+                    <td class="text-right fw-bold">{{ number_format($expense->amount, 2) }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+
+            <div style="float: left; width: 55%;">
+                <div class="section-title" style="margin-bottom: 8px;">Amount in Words (PKR)</div>
+                <div style="background-color: #f8f9fa; padding: 10px; border-radius: 4px; border-left: 3px solid #7f8c8d; font-style: italic; font-weight: 500; font-size: 9.5pt; color: #333;">
+                    {{ $bill->amount_in_words() }}
+                </div>
+            </div>
+            <div class="summary-wrapper">
+                <table class="summary-table" style="width: 100%;">
+                    <tr>
+                        <td class="text-right">Subtotal:</td>
+                        <td class="text-right" style="width: 40%;">{{ number_format($bill->billItems->sum('total') + $bill->billExpenses->sum('amount'), 2) }}</td>
+                    </tr>
+                    @if($bill->discount > 0)
+                    <tr>
+                        <td class="text-right">Discount:</td>
+                        <td class="text-right" style="color: #c0392b;">-{{ number_format($bill->discount, 2) }}</td>
+                    </tr>
                     @endif
-                </td>
-                <td class="text-center">{{ $item->delivery_date ? \Carbon\Carbon::parse($item->delivery_date)->format('d/m/Y') : '-' }}</td>
-                <td class="qty-cell">{{ number_format($item->quantity) }}</td>
-                <td class="price-cell">{{ number_format($item->price, 2) }}</td>
-                <td class="text-right total-amount-cell">{{ number_format($item->total, 2) }}</td>
-            
-            </tr>
-            @endforeach
-        </tbody>
-        <tfoot>
-            <tr>
-                <th colspan="3" class="text-center">Subtotal</th>
-                <th class="text-center">{{ number_format($totalQuantity) }}</th>
-                <th class="text-center">—</th>
-                <th class="text-right">{{ number_format($totalAmount, 2) }}</th>
-            </tr>
-        </tfoot>
-    </table>
-    <div class="footer">
-        This is a system-generated invoice and does not require a signature.
+                    @if($bill->tax > 0)
+                    <tr>
+                        <td class="text-right">Tax {{ $bill->tax_percent > 0 ? '(' . number_format($bill->tax_percent, 2) . '%)' : '' }}:</td>
+                        <td class="text-right">+{{ number_format($bill->tax, 2) }}</td>
+                    </tr>
+                    @endif
+                    <tr>
+                        <td class="text-right grand-total">Grand Total:</td>
+                        <td class="text-right grand-total">{{ $companySetting->currency_symbol ?? 'Rs.' }} {{ number_format($bill->total, 2) }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="footer">
+            Thank you for your business! This is a system-generated document.
+        </div>
     </div>
+
     <script type="text/php">
         if (isset($pdf)) {
-            $pdf->page_script('if ($PAGE_COUNT > 1) { $font = $fontMetrics->get_font("Arial", "normal"); $size = 10; $text = "Page $PAGE_NUM of $PAGE_COUNT"; $width = $pdf->get_width(); $pdf->text($width - 120, $pdf->get_height() - 15, $text, $font, $size); }');
+            $x = 520;
+            $y = 820;
+            $text = "Page {PAGE_NUM} of {PAGE_COUNT}";
+            $font = $fontMetrics->get_font("DejaVu Sans", "normal");
+            $size = 8;
+            $color = array(0.3, 0.3, 0.3);
+            $word_space = 0.0;
+            $char_space = 0.0;
+            $angle = 0.0;
+            $pdf->page_text($x, $y, $text, $font, $size, $color, $word_space, $char_space, $angle);
         }
     </script>
 </body>

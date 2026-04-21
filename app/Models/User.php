@@ -25,6 +25,7 @@ class User extends Authenticatable implements Auditable
         'email',
         'password',
         'role',
+        'commission_percentage',
         'theme',
         'menu_permissions',
     ];
@@ -53,15 +54,32 @@ class User extends Authenticatable implements Auditable
         ];
     }
 
-    public function hasMenuPermission(string $menuKey): bool
+    public function hasMenuPermission(string $menuKey, string $action = 'view'): bool
     {
-        $permissions = $this->menu_permissions;
-
-        if (empty($permissions)) {
+        // Admin role always has all permissions
+        if ($this->role === 'Admin') {
             return true;
         }
 
-        return in_array($menuKey, $permissions, true);
+        $permissions = $this->menu_permissions;
+
+        if (empty($permissions)) {
+            // Default to no access for non-admins if permissions are strictly defined
+            return false;
+        }
+
+        // Backward compatibility: If the array is simple [0 => 'key', 1 => 'key']
+        if (array_is_list($permissions)) {
+            return in_array($menuKey, $permissions, true);
+        }
+
+        // New nested structure: ['menu_key' => ['view' => true, 'edit' => false, 'delete' => false]]
+        if (isset($permissions[$menuKey])) {
+            $menuPerms = $permissions[$menuKey];
+            return isset($menuPerms[$action]) && (bool)$menuPerms[$action];
+        }
+
+        return false;
     }
 
     public function commissions()

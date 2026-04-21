@@ -11,7 +11,15 @@ class Payment extends Model implements Auditable
 {
     use AuditableTrait;
 
-    protected $fillable = ['customer_id', 'bill_id', 'payment_party_id', 'amount', 'payment_date', 'mode', 'remarks'];
+    protected $fillable = [
+        'customer_id', 'payment_party_id', 'recipient_account_id', 
+        'destination_type', 'amount', 'payment_date', 'mode', 'remarks'
+    ];
+
+    public function recipientAccount()
+    {
+        return $this->belongsTo(Account::class, 'recipient_account_id');
+    }
 
     protected $casts = [
         'payment_date' => 'date',
@@ -30,5 +38,10 @@ class Payment extends Model implements Auditable
     public function bill()
     {
         return $this->belongsTo(Bill::class);
+    }
+
+    public function settlements()
+    {
+        return $this->hasMany(PaymentSettlement::class);
     }
 }

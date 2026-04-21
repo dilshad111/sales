@@ -20,7 +20,8 @@ class CustomerController extends Controller
                   ->orWhere('phone', 'like', '%' . $request->search . '%');
         }
 
-        $customers = $query->paginate(10);
+        $perPage = $request->input('per_page', 20);
+        $customers = $query->paginate($perPage)->withQueryString();
 
         return view('customers.index', compact('customers'));
     }

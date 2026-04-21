@@ -46,7 +46,7 @@
 
                     <div class="mb-3">
                         <label for="commission_date" class="form-label fw-bold">Commission Bill Date</label>
-                        <input type="date" name="commission_date" id="commission_date" class="form-control @error('commission_date') is-invalid @enderror" value="{{ date('Y-m-d') }}" required>
+                        <input type="date" name="commission_date" id="commission_date" class="form-control @error('commission_date') is-invalid @enderror" value="{{ date('Y-m-d') }}" max="{{ date('Y-m-d') }}" required>
                         @error('commission_date')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -64,7 +64,7 @@
                         </div>
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="text-muted fw-bold">Total Commission:</span>
-                            <span id="totalCommission" class="h4 mb-0 fw-bold text-success">Rs. 0.00</span>
+                            <span id="totalCommission" class="h4 mb-0 fw-bold text-success">{{ $companySetting->currency_symbol ?? 'Rs.' }} 0.00</span>
                         </div>
                         <button type="submit" class="btn btn-primary w-100 mt-4 py-2 fw-bold" id="submitBtn" disabled>
                             <i class="fas fa-save me-1"></i>Generate Commission Bill
@@ -112,6 +112,8 @@
 </form>
 
 <script>
+const currencySymbol = "{{ $companySetting->currency_symbol ?? 'Rs.' }}";
+
 document.getElementById('customer_id').addEventListener('change', function() {
     const customerId = this.value;
     const billsList = document.getElementById('billsList');
@@ -124,7 +126,7 @@ document.getElementById('customer_id').addEventListener('change', function() {
 
     loading.style.display = 'inline-block';
     
-    fetch(`/salman-commission/get-bills?customer_id=${customerId}`)
+    fetch(`{{ route('salman_commissions.get_customer_bills') }}?customer_id=${customerId}`)
         .then(response => response.json())
         .then(data => {
             loading.style.display = 'none';
@@ -135,32 +137,43 @@ document.getElementById('customer_id').addEventListener('change', function() {
 
             let html = '';
             data.forEach((bill, index) => {
-                const disabled = bill.is_commissioned ? 'disabled' : '';
+                const disabledRow = bill.is_commissioned ? 'disabled' : '';
                 const commissionedText = bill.is_commissioned ? `<div class="text-danger small mt-1"><i class="fas fa-exclamation-circle"></i> Already Paid</div>` : '';
                 const rowClass = bill.is_commissioned ? 'table-light opacity-50' : '';
 
                 html += `
                 <tr class="${rowClass}">
                     <td class="ps-3">
-                        <input type="checkbox" name="bills[${index}][id]" value="${bill.id}" class="form-check-input bill-checkbox" ${disabled}>
+                        <input type="checkbox" name="bills[${index}][id]" value="${bill.id}" class="form-check-input bill-checkbox" ${disabledRow}>
                     </td>
                     <td>
                         <div class="fw-bold">${bill.bill_number}</div>
                         ${commissionedText}
                     </td>
                     <td>${bill.bill_date}</td>
-                    <td class="text-end">Rs. ${parseFloat(bill.total).toLocaleString()}</td>
+                    <td class="text-end">${currencySymbol} ${parseFloat(bill.total).toLocaleString()}</td>
                     <td>
                         <div class="input-group input-group-sm">
-                            <input type="number" name="bills[${index}][percent]" class="form-control comm-percent" value="0" step="0.01" min="0" max="100" ${disabled}>
+                            <input type="number" name="bills[${index}][percent]" class="form-control comm-percent" value="0" step="0.01" min="0" max="100" disabled>
                             <span class="input-group-text">%</span>
                         </div>
                     </td>
-                    <td class="text-end fw-bold text-dark comm-amount-display">Rs. 0.00</td>
+                    <td class="text-end fw-bold text-dark comm-amount-display">${currencySymbol} 0.00</td>
                 </tr>
                 `;
             });
             billsList.innerHTML = html;
+            
+            // Add change listener to newly created checkboxes to enable/disable percent input
+            document.querySelectorAll('.bill-checkbox').forEach(cb => {
+                cb.addEventListener('change', function() {
+                    const row = this.closest('tr');
+                    const percentInput = row.querySelector('.comm-percent');
+                    percentInput.disabled = !this.checked;
+                    updateTotals();
+                });
+            });
+
             updateTotals();
         });
 });
@@ -189,7 +202,7 @@ function updateTotals() {
         const checkbox = row.querySelector('.bill-checkbox');
         if (checkbox && checkbox.checked) {
             count++;
-            const billAmountText = row.children[3].innerText.replace(/Rs\.\s|,/g, '');
+            const billAmountText = row.children[3].innerText.replace(new RegExp(currencySymbol.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s|,', 'g'), '');
             const billAmount = parseFloat(billAmountText);
             const percentInput = row.querySelector('.comm-percent');
             const percent = parseFloat(percentInput.value) || 0;
@@ -197,13 +210,13 @@ function updateTotals() {
             const commAmt = (billAmount * percent) / 100;
             total += commAmt;
             
-            row.querySelector('.comm-amount-display').innerText = `Rs. ${commAmt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            row.querySelector('.comm-amount-display').innerText = `${currencySymbol} ${commAmt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         } else if (checkbox) {
-            row.querySelector('.comm-amount-display').innerText = `Rs. 0.00`;
+            row.querySelector('.comm-amount-display').innerText = `${currencySymbol} 0.00`;
         }
     });
 
-    document.getElementById('totalCommission').innerText = `Rs. ${total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    document.getElementById('totalCommission').innerText = `${currencySymbol} ${total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
     document.getElementById('selectedCount').innerText = `${count} Bills`;
     document.getElementById('submitBtn').disabled = (count === 0);
 }

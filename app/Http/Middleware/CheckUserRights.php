@@ -41,11 +41,23 @@ class CheckUserRights
         }
 
         // If route is part of a protected menu, check permissions
-        if ($menuKey && !$user->hasMenuPermission($menuKey)) {
-            if ($request->ajax()) {
-                return response()->json(['error' => 'Unauthorized access.'], 403);
+        if ($menuKey) {
+            $action = 'view';
+            if (str_contains($routeName, '.create') || str_contains($routeName, '.store') || 
+                str_contains($routeName, '.edit') || str_contains($routeName, '.update') ||
+                str_contains($routeName, '.import')) {
+                $action = 'edit';
+            } elseif (str_contains($routeName, '.destroy') || str_contains($routeName, '.delete')) {
+                $action = 'delete';
             }
-            return redirect()->route('dashboard')->with('error', 'You do not have permission to access ' . ($menuConfig[$menuKey]['label'] ?? 'this section') . '.');
+
+            if (!$user->hasMenuPermission($menuKey, $action)) {
+                if ($request->ajax()) {
+                    return response()->json(['error' => 'Unauthorized access.'], 403);
+                }
+                $actionLabel = strtoupper($action);
+                return redirect()->route('dashboard')->with('error', "You do not have {$actionLabel} permission for " . ($menuConfig[$menuKey]['label'] ?? 'this section') . ".");
+            }
         }
 
         return $next($request);

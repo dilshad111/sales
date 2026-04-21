@@ -9,6 +9,16 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            if (auth()->user()->role !== 'Admin') {
+                return redirect()->route('dashboard')->with('error', 'Only administrators can manage users.');
+            }
+            return $next($request);
+        });
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -43,19 +53,16 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        $menuKeys = array_keys(config('menu_permissions.menus'));
-
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|string|in:Admin,User,Agent',
+            'role' => 'required|string|in:Admin,User,Agent,Principal',
             'menu_permissions' => 'nullable|array',
-            'menu_permissions.*' => ['string', Rule::in($menuKeys)],
         ]);
 
         $data['password'] = Hash::make($data['password']);
-        $data['menu_permissions'] = $this->prepareMenuPermissions($data['menu_permissions'] ?? []);
+        $data['menu_permissions'] = $data['menu_permissions'] ?? [];
 
         User::create($data);
 
@@ -89,15 +96,12 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
-        $menuKeys = array_keys(config('menu_permissions.menus'));
-
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
             'password' => 'nullable|string|min:8|confirmed',
-            'role' => 'required|string|in:Admin,User,Agent',
+            'role' => 'required|string|in:Admin,User,Agent,Principal',
             'menu_permissions' => 'nullable|array',
-            'menu_permissions.*' => ['string', Rule::in($menuKeys)],
         ]);
 
         if ($data['password']) {
@@ -106,7 +110,7 @@ class UserController extends Controller
             unset($data['password']);
         }
 
-        $data['menu_permissions'] = $this->prepareMenuPermissions($data['menu_permissions'] ?? []);
+        $data['menu_permissions'] = $data['menu_permissions'] ?? [];
 
         $user->update($data);
 
@@ -144,26 +148,10 @@ class UserController extends Controller
 
     public function updateRights(Request $request, User $user)
     {
-        $menuKeys = array_keys(config('menu_permissions.menus'));
-
-        $request->validate([
-            'menu_permissions' => 'nullable|array',
-            'menu_permissions.*' => ['string', Rule::in($menuKeys)],
-        ]);
-
         $user->update([
-            'menu_permissions' => $this->prepareMenuPermissions($request->menu_permissions ?? [])
+            'menu_permissions' => $request->menu_permissions ?? []
         ]);
 
         return redirect()->route('users.rights', ['user_id' => $user->id])->with('success', 'User rights updated successfully.');
-    }
-
-    private function prepareMenuPermissions(array $menuPermissions): array
-    {
-        $uniquePermissions = array_values(array_unique($menuPermissions));
-
-        sort($uniquePermissions);
-
-        return $uniquePermissions;
     }
 }

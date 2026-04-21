@@ -39,10 +39,12 @@ class CartonCosting extends Model
         'profit_amount',
         'final_carton_cost',
         'layers',
+        'flute_factors',
     ];
 
     protected $casts = [
         'layers' => 'array',
+        'flute_factors' => 'array',
     ];
 
     public function customer()

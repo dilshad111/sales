@@ -5,7 +5,11 @@
 @section('content')
 <div class="row justify-content-center">
     <div class="col-md-4">
-        <div class="card">
+        <div class="text-center mb-4">
+            <h2 class="fw-bold text-primary mb-1" style="font-family: 'Outfit', sans-serif; letter-spacing: -1px;">ASTOLA ERP</h2>
+            <p class="text-muted small text-uppercase ls-1" style="font-size: 0.75rem;">Enterprise Resource Planning</p>
+        </div>
+        <div class="card shadow-sm border-0">
             <div class="card-header">Login</div>
             <div class="card-body">
                 <form method="POST" action="{{ route('login') }}">

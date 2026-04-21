@@ -39,7 +39,8 @@ class ItemController extends Controller
             $query->where('customer_id', $request->customer_id);
         }
 
-        $items = $query->paginate(10);
+        $perPage = $request->input('per_page', 20);
+        $items = $query->paginate($perPage)->withQueryString();
         $customers = Customer::all();
 
         return view('items.index', compact('items', 'customers'));
@@ -124,7 +125,7 @@ class ItemController extends Controller
 
     public function getByCustomer($customerId)
     {
-        $items = Item::where('customer_id', $customerId)->get();
+        $items = Item::where('customer_id', $customerId)->orderBy('name')->get();
         return response()->json($items);
     }
 }

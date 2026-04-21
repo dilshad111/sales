@@ -18,58 +18,48 @@ class PersonalAccountController extends Controller
         [$from, $to] = $this->parseDateRange($request->input('from_date'), $request->input('to_date'));
 
         $usersQuery = User::query()
-            ->where(function ($query) {
-                $query->whereHas('commissions')
-                    ->orWhereHas('commissionPayments');
-            });
+            ->with(['commissions']) // Still keeping for UI info if needed
+            ->orderBy('name');
 
         if ($search = $request->input('search')) {
             $usersQuery->where('name', 'like', '%' . $search . '%');
         }
 
-        $usersQuery
-            ->withSum(['commissions as commission_sum' => function ($query) use ($from, $to) {
-                if ($from) {
-                    $query->whereDate('commission_date', '>=', $from->toDateString());
-                }
-                if ($to) {
-                    $query->whereDate('commission_date', '<=', $to->toDateString());
-                }
-            }], 'amount')
-            ->withSum(['commissionPayments as payment_sum' => function ($query) use ($from, $to) {
-                if ($from) {
-                    $query->whereDate('payment_date', '>=', $from->toDateString());
-                }
-                if ($to) {
-                    $query->whereDate('payment_date', '<=', $to->toDateString());
-                }
-            }], 'amount');
+        $users = $usersQuery->paginate(20);
 
-        $users = $usersQuery
-            ->orderBy('name')
-            ->paginate(10)
-            ->withQueryString();
+        // Fetch Accounting Balances for each user
+        $users->getCollection()->transform(function ($user) use ($from, $to) {
+            $account = \App\Models\Account::where('user_id', $user->id)->first();
+            
+            if ($account) {
+                $user->account_id = $account->id;
+                
+                // Fetch transaction sums within date range
+                $query = $account->entries();
+                if ($from) $query->whereHas('transaction', fn($q) => $q->where('date', '>=', $from->toDateString()));
+                if ($to) $query->whereHas('transaction', fn($q) => $q->where('date', '<=', $to->toDateString()));
+                
+                $sums = $query->selectRaw('SUM(debit) as total_debits, SUM(credit) as total_credits')->first();
+                
+                // Note: For liability accounts (what we owe them), Credit is increase (commission), Debit is decrease (payment)
+                // Outstanding for them is Credits - Debits
+                $user->total_commission = (float) $sums->total_credits;
+                $user->total_payments = (float) $sums->total_debits;
+                $user->account_balance = $user->total_commission - $user->total_payments;
+            } else {
+                $user->total_commission = 0;
+                $user->total_payments = 0;
+                $user->account_balance = 0;
+            }
+
+            return $user;
+        });
 
         $usersForForms = User::orderBy('name')->get();
-
-        $openCommissions = Commission::with('user')
-            ->withSum('payments as payments_total', 'amount')
-            ->orderByDesc('commission_date')
-            ->get()
-            ->map(function (Commission $commission) {
-                $paid = (float) ($commission->payments_total ?? 0);
-                $commission->outstanding = (float) max($commission->amount - $paid, 0);
-                return $commission;
-            })
-            ->filter(function (Commission $commission) {
-                return $commission->outstanding > 0;
-            })
-            ->groupBy('user_id');
 
         return view('personal_accounts.index', [
             'users' => $users,
             'usersForForms' => $usersForForms,
-            'openCommissions' => $openCommissions,
             'filters' => [
                 'search' => $search,
                 'from_date' => $request->input('from_date'),
@@ -83,7 +73,7 @@ class PersonalAccountController extends Controller
         $data = $request->validate([
             'user_id' => 'required|exists:users,id',
             'amount' => 'required|numeric|min:0.01',
-            'commission_date' => 'required|date',
+            'commission_date' => 'required|date|before_or_equal:today',
             'reference' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
         ]);
@@ -99,7 +89,7 @@ class PersonalAccountController extends Controller
             'user_id' => 'required|exists:users,id',
             'commission_id' => 'nullable|exists:commissions,id',
             'amount' => 'required|numeric|min:0.01',
-            'payment_date' => 'required|date',
+            'payment_date' => 'required|date|before_or_equal:today',
             'reference' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
         ]);
@@ -199,80 +189,56 @@ class PersonalAccountController extends Controller
 
     protected function buildStatement(User $user, ?Carbon $from, ?Carbon $to): array
     {
-        $commissionsQuery = $user->commissions()->orderBy('commission_date', 'asc')->orderBy('created_at', 'asc');
-        if ($from) {
-            $commissionsQuery->whereDate('commission_date', '>=', $from->toDateString());
+        $account = \App\Models\Account::where('user_id', $user->id)->first();
+        
+        if (!$account) {
+            return [
+                'entries' => collect(),
+                'commission_total' => 0,
+                'payment_total' => 0,
+                'balance' => 0,
+            ];
         }
-        if ($to) {
-            $commissionsQuery->whereDate('commission_date', '<=', $to->toDateString());
-        }
-        $commissions = $commissionsQuery->get();
 
-        $paymentsQuery = $user->commissionPayments()->with('commission')->orderBy('payment_date', 'asc')->orderBy('created_at', 'asc');
-        if ($from) {
-            $paymentsQuery->whereDate('payment_date', '>=', $from->toDateString());
-        }
-        if ($to) {
-            $paymentsQuery->whereDate('payment_date', '<=', $to->toDateString());
-        }
-        $payments = $paymentsQuery->get();
+        $query = $account->entries()->with('transaction');
+        
+        if ($from) $query->whereHas('transaction', fn($q) => $q->where('date', '>=', $from->toDateString()));
+        if ($to) $query->whereHas('transaction', fn($q) => $q->where('date', '<=', $to->toDateString()));
+        
+        $entriesData = $query->join('transactions', 'transaction_entries.transaction_id', '=', 'transactions.id')
+            ->orderBy('transactions.date', 'asc')
+            ->orderBy('transactions.created_at', 'asc')
+            ->select('transaction_entries.*', 'transactions.date as tx_date', 'transactions.narration', 'transactions.type as tx_type')
+            ->get();
 
         $entries = collect();
-
-        foreach ($commissions as $commission) {
-            $date = $commission->commission_date ?? $commission->created_at;
-            $entries->push([
-                'id' => $commission->id,
-                'type' => 'commission',
-                'date' => $date instanceof Carbon ? $date : Carbon::parse($date),
-                'reference' => $commission->reference ?: '-',
-                'notes' => $commission->notes ?: '-',
-                'commission_amount' => (float) $commission->amount,
-                'payment_amount' => 0.0,
-                'amount' => (float) $commission->amount,
-            ]);
-        }
-
-        foreach ($payments as $payment) {
-            $date = $payment->payment_date ?? $payment->created_at;
-            $entries->push([
-                'id' => $payment->id,
-                'type' => 'payment',
-                'date' => $date instanceof Carbon ? $date : Carbon::parse($date),
-                'reference' => $payment->reference ?: '-',
-                'notes' => $payment->notes ?: '-',
-                'commission_amount' => 0.0,
-                'payment_amount' => (float) $payment->amount,
-                'amount' => (float) $payment->amount,
-                'commission_ref' => $payment->commission ? ($payment->commission->reference ?: '#' . $payment->commission->id) : null,
-            ]);
-        }
-
-        $entries = $entries
-            ->sortBy('date')
-            ->values()
-            ->map(function (array $entry) {
-                $entry['display_date'] = $entry['date'] ? $entry['date']->format('d/m/Y') : '-';
-                return $entry;
-            });
-
         $runningBalance = 0.0;
-        $entries = $entries->map(function (array $entry) use (&$runningBalance) {
-            if ($entry['type'] === 'commission') {
-                $runningBalance += $entry['commission_amount'];
-            } else {
-                $runningBalance -= $entry['payment_amount'];
-            }
-            $entry['balance'] = round($runningBalance, 2);
-            $entry['running_balance'] = round($runningBalance, 2);
-            return $entry;
-        });
+
+        foreach ($entriesData as $entry) {
+            // Note: For liability accounts (what we owe them), Credit is increase (commission), Debit is decrease (payment)
+            $runningBalance += ($entry->credit - $entry->debit);
+            
+            $entries->push([
+                'id' => $entry->id,
+                'type' => $entry->credit > 0 ? 'commission' : 'payment',
+                'date' => Carbon::parse($entry->tx_date),
+                'display_date' => Carbon::parse($entry->tx_date)->format('d/m/Y'),
+                'reference' => $entry->tx_type,
+                'notes' => $entry->narration,
+                'commission_amount' => (float) $entry->credit,
+                'payment_amount' => (float) $entry->debit,
+                'amount' => $entry->credit > 0 ? (float)$entry->credit : (float)$entry->debit,
+                'running_balance' => round($runningBalance, 2),
+                'balance' => round($runningBalance, 2),
+                'commission_ref' => null, // Not used in ledger view
+            ]);
+        }
 
         return [
             'entries' => $entries,
-            'commission_total' => round($commissions->sum('amount'), 2),
-            'payment_total' => round($payments->sum('amount'), 2),
-            'balance' => round($entries->last()['balance'] ?? 0, 2),
+            'commission_total' => round($entriesData->sum('credit'), 2),
+            'payment_total' => round($entriesData->sum('debit'), 2),
+            'balance' => round($runningBalance, 2),
         ];
     }
 

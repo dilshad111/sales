@@ -20,12 +20,16 @@ class PaymentPartyController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'email' => 'nullable|email|max:255',
+            'address' => 'nullable|string|max:500',
+            'opening_balance' => 'required|numeric|min:0',
             'status' => 'required|in:active,inactive',
         ]);
 
-        PaymentParty::create($request->all());
+        PaymentParty::create($validated);
 
         return redirect()->route('payment_parties.index')->with('success', 'Payment Party created successfully.');
     }
@@ -37,12 +41,16 @@ class PaymentPartyController extends Controller
 
     public function update(Request $request, PaymentParty $payment_party)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'email' => 'nullable|email|max:255',
+            'address' => 'nullable|string|max:500',
+            'opening_balance' => 'required|numeric|min:0',
             'status' => 'required|in:active,inactive',
         ]);
 
-        $payment_party->update($request->all());
+        $payment_party->update($validated);
 
         return redirect()->route('payment_parties.index')->with('success', 'Payment Party updated successfully.');
     }

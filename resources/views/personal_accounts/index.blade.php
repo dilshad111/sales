@@ -1,261 +1,309 @@
 @extends('layouts.app')
 
-@section('title', 'Personal Accounts')
+@section('title', 'Network Financial Management')
 
 @section('content')
-<div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="mb-0"><i class="fas fa-wallet me-2"></i>Personal Accounts</h1>
-    <div class="d-flex gap-2">
-        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#commissionModal">
-            <i class="fas fa-plus me-1"></i>Record Commission
-        </button>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentModal">
-            <i class="fas fa-money-bill-wave me-1"></i>Record Payment
-        </button>
-    </div>
-</div>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --brand-blue: #6366f1;
+        --brand-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        --surface: #ffffff;
+        --bg: #f8fafc;
+        --text-base: #334155;
+        --text-dim: #64748b;
+        --border: #e2e8f0;
+    }
 
-<div class="card mb-4">
-    <div class="card-body">
+    body {
+        font-family: 'Outfit', sans-serif;
+        background-color: var(--bg);
+        color: var(--text-base);
+    }
+
+    .glass-header {
+        background: var(--brand-gradient);
+        border-radius: 20px;
+        padding: 1.5rem 3rem;
+        min-height: 30mm;
+        display: flex;
+        align-items: center;
+        margin-bottom: 2.5rem;
+        color: white;
+        box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.4);
+    }
+
+    .stats-card {
+        background: white;
+        border: none;
+        border-radius: 18px;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+        overflow: hidden;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.05);
+    }
+
+    .search-panel {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        border: 1px solid var(--border);
+        margin-bottom: 2rem;
+    }
+
+    .premium-table {
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+    }
+
+    .premium-table thead th {
+        background: #fdfdff;
+        color: var(--text-dim);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 1.2px;
+        padding: 1.5rem 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .premium-table tbody td {
+        padding: 1.5rem 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.95rem;
+    }
+
+    .user-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: var(--brand-blue);
+        font-size: 1.2rem;
+    }
+
+    .balance-pill {
+        padding: 0.4rem 1rem;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        display: inline-block;
+    }
+
+    .btn-premium {
+        border-radius: 12px;
+        padding: 0.6rem 1.25rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn-create {
+        background: white;
+        color: var(--brand-blue);
+        border: none;
+    }
+
+    .form-control-premium {
+        border-radius: 12px;
+        padding: 0.75rem 1.25rem;
+        border: 1px solid var(--border);
+        background: #f8fafc;
+    }
+
+    .form-control-premium:focus {
+        background: white;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        border-color: var(--brand-blue);
+    }
+</style>
+
+<div class="container py-5">
+    <!-- Main Header -->
+    <div class="glass-header d-flex align-items-center justify-content-between">
+        <div>
+            <h2 class="fw-bold mb-1">Financial Partners</h2>
+            <p class="opacity-75 mb-0 fw-500 small">Global oversight of individual liabilities and commissions</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-premium btn-create shadow-sm px-4" data-bs-toggle="modal" data-bs-target="#commissionModal">
+                <i class="fas fa-plus-circle me-2"></i>Add Commission
+            </button>
+            <a href="{{ route('vouchers.create', ['type' => 'PV']) }}" class="btn btn-premium btn-dark shadow-sm px-4">
+                <i class="fas fa-money-bill-wave me-2"></i>Make Payment
+            </a>
+        </div>
+    </div>
+
+    <!-- Search & Filters -->
+    <div class="search-panel">
         <form method="GET" class="row g-3 align-items-end">
-            <div class="col-md-4">
-                <label for="search" class="form-label">Search Individual</label>
-                <input type="text" id="search" name="search" class="form-control" value="{{ $filters['search'] ?? '' }}" placeholder="Search by name">
+            <div class="col-md-5">
+                <label class="form-label small fw-700 text-uppercase text-muted ls-1">Name Or Identity</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0 rounded-start-3" style="border-radius: 12px 0 0 12px; border: 1px solid var(--border);">
+                        <i class="fas fa-search text-muted"></i>
+                    </span>
+                    <input type="text" name="search" class="form-control form-control-premium border-start-0" 
+                           style="border-radius: 0 12px 12px 0;"
+                           value="{{ $filters['search'] ?? '' }}" placeholder="Filter by financial entity...">
+                </div>
             </div>
             <div class="col-md-3">
-                <label for="from_date" class="form-label">From Date</label>
-                <input type="date" id="from_date" name="from_date" class="form-control" value="{{ $filters['from_date'] ?? '' }}">
+                <label class="form-label small fw-700 text-uppercase text-muted ls-1">From</label>
+                <input type="date" name="from_date" class="form-control form-control-premium" value="{{ $filters['from_date'] ?? '' }}">
             </div>
             <div class="col-md-3">
-                <label for="to_date" class="form-label">To Date</label>
-                <input type="date" id="to_date" name="to_date" class="form-control" value="{{ $filters['to_date'] ?? '' }}">
+                <label class="form-label small fw-700 text-uppercase text-muted ls-1">To</label>
+                <input type="date" name="to_date" class="form-control form-control-premium" value="{{ $filters['to_date'] ?? '' }}">
             </div>
-            <div class="col-md-2 d-grid">
-                <button type="submit" class="btn btn-secondary"><i class="fas fa-filter me-1"></i>Filter</button>
+            <div class="col-md-1 d-grid">
+                <button type="submit" class="btn btn-premium btn-primary py-3">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
             </div>
         </form>
     </div>
-</div>
 
-<div class="card">
-    <div class="card-body p-0">
+    <!-- Table -->
+    <div class="premium-table">
         <div class="table-responsive">
-            <table class="table table-striped mb-0 align-middle">
-                <thead class="table-light">
+            <table class="table mb-0 align-middle">
+                <thead>
                     <tr>
-                        <th>Individual</th>
-                        <th class="text-end">Total Commission (₨)</th>
-                        <th class="text-end">Total Payments (₨)</th>
-                        <th class="text-end">Balance (₨)</th>
-                        <th class="text-center" style="width: 150px;">Actions</th>
+                        <th class="ps-4">Entity Name</th>
+                        <th class="text-end">Total Commission</th>
+                        <th class="text-end">Total Paid</th>
+                        <th class="text-end">Balance</th>
+                        <th class="text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($users as $user)
                         @php
-                            $commissionTotal = (float) ($user->commission_sum ?? 0);
-                            $paymentTotal = (float) ($user->payment_sum ?? 0);
-                            $balance = $commissionTotal - $paymentTotal;
-                            $userOutstanding = $openCommissions->get($user->id) ?? collect();
+                            $commissionTotal = (float) ($user->total_commission ?? 0);
+                            $paymentTotal = (float) ($user->total_payments ?? 0);
+                            $balance = (float) ($user->account_balance ?? 0);
                         @endphp
                         <tr>
-                            <td>
-                                <strong>{{ $user->name }}</strong>
-                                <div class="small text-muted">Email: {{ $user->email }}</div>
-                                @if($userOutstanding->isNotEmpty())
-                                    <div class="mt-1">
-                                        <span class="badge bg-warning text-dark">
-                                            <i class="fas fa-info-circle me-1"></i>Outstanding commissions: {{ number_format($userOutstanding->sum('outstanding'), 2) }}
-                                        </span>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="user-avatar text-uppercase">
+                                        {{ substr($user->name, 0, 1) }}
                                     </div>
-                                @endif
+                                    <div>
+                                        <div class="fw-700 text-dark h6 mb-0">{{ $user->name }}</div>
+                                        <div class="small text-muted">{{ $user->email ?: 'Internal Partner' }}</div>
+                                    </div>
+                                </div>
                             </td>
-                            <td class="text-end">{{ number_format($commissionTotal, 2) }}</td>
-                            <td class="text-end">{{ number_format($paymentTotal, 2) }}</td>
-                            <td class="text-end fw-semibold {{ $balance > 0 ? 'text-danger' : 'text-success' }}">{{ number_format($balance, 2) }}</td>
+                            <td class="text-end fw-500 text-dark">
+                                {{ number_format($commissionTotal, 2) }}
+                            </td>
+                            <td class="text-end fw-500 text-dark">
+                                {{ number_format($paymentTotal, 2) }}
+                            </td>
+                            <td class="text-end">
+                                <div class="balance-pill {{ $balance > 0.01 ? 'bg-danger bg-opacity-10 text-danger' : 'bg-success bg-opacity-10 text-success' }}">
+                                    {{ $balance > 0.01 ? 'Dr.' : 'Cr.' }} {{ number_format(abs($balance), 2) }}
+                                </div>
+                            </td>
                             <td class="text-center">
-                                <a href="{{ route('personal_accounts.statement', $user) }}" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-file-alt me-1"></i>Statement
-                                </a>
-                                <button class="btn btn-sm btn-outline-success mt-1 mt-lg-0 record-payment-btn"
-                                    data-bs-toggle="modal" data-bs-target="#paymentModal"
-                                    data-user-id="{{ $user->id }}"
-                                    data-user-name="{{ $user->name }}">
-                                    <i class="fas fa-money-bill me-1"></i>Payment
-                                </button>
+                                <div class="btn-group shadow-sm" style="border-radius: 12px; overflow: hidden;">
+                                    <a href="{{ route('personal_accounts.statement', $user) }}" class="btn btn-sm btn-white border px-3" title="View Statement">
+                                        <i class="far fa-file-alt text-primary"></i>
+                                    </a>
+                                    @if($user->account_id)
+                                    <a href="{{ route('vouchers.create', ['type' => 'PV', 'account_id' => $user->account_id]) }}" class="btn btn-sm btn-white border px-3" title="Pay Now">
+                                        <i class="fas fa-coins text-success"></i>
+                                    </a>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center py-4 text-muted">No records found for the selected filters.</td>
+                            <td colspan="5" class="text-center py-5">
+                                <div class="text-muted opacity-50 mb-3">
+                                    <i class="fas fa-folder-open fa-3x"></i>
+                                </div>
+                                <div class="h5 fw-bold text-muted">No financial partners located</div>
+                                <p class="text-muted small">Try refining your search parameters</p>
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
     </div>
+
     @if($users->hasPages())
-        <div class="card-footer">
-            {{ $users->links() }}
-        </div>
+    <div class="mt-4 d-flex justify-content-center">
+        {{ $users->links() }}
+    </div>
     @endif
 </div>
 
-@php
-    $outstandingMap = $openCommissions->mapWithKeys(function ($commissions, $userId) {
-        return [
-            $userId => $commissions->map(function ($commission) {
-                return [
-                    'id' => $commission->id,
-                    'label' => ($commission->reference ?: ('Commission #' . $commission->id)) . ' - Outstanding ₨' . number_format($commission->outstanding, 2),
-                ];
-            })->values(),
-        ];
-    });
-@endphp
+<!-- Modal Upgrade -->
+<style>
+    .modal-content { border-radius: 24px; border: none; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.2); }
+    .modal-header { background: var(--brand-gradient); color: white; border: none; padding: 2rem; }
+    .modal-footer { border: none; padding: 1.5rem 2rem; }
+</style>
 
-<!-- Commission Modal -->
-<div class="modal fade" id="commissionModal" tabindex="-1" aria-labelledby="commissionModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+<div class="modal fade" id="commissionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="commissionModalLabel">Record Commission</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div>
+                    <h4 class="modal-title fw-bold" id="commissionModalLabel">Add Commission</h4>
+                    <p class="mb-0 small opacity-75">Record new commission for a partner</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="POST" action="{{ route('personal_accounts.commissions.store') }}" class="needs-validation" novalidate>
+            <form method="POST" action="{{ route('personal_accounts.commissions.store') }}">
                 @csrf
                 <input type="hidden" name="redirect_to" value="{{ request()->fullUrl() }}">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="commission_user_id" class="form-label">Individual</label>
-                        <select id="commission_user_id" name="user_id" class="form-select" required>
-                            <option value="">Select Individual</option>
+                <div class="modal-body p-4 p-md-5">
+                    <div class="mb-4">
+                        <label class="form-label small fw-700 text-uppercase ls-1">Target Entity</label>
+                        <select name="user_id" class="form-select form-control-premium" required>
+                            <option value="">Select Partner...</option>
                             @foreach($usersForForms as $userOption)
                                 <option value="{{ $userOption->id }}">{{ $userOption->name }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label for="commission_date" class="form-label">Commission Date</label>
-                        <input type="date" id="commission_date" name="commission_date" class="form-control" value="{{ now()->toDateString() }}" required>
+                    <div class="row mb-4">
+                        <div class="col-6">
+                            <label class="form-label small fw-700 text-uppercase ls-1">Date</label>
+                            <input type="date" name="commission_date" class="form-control form-control-premium" value="{{ now()->toDateString() }}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-700 text-uppercase ls-1">Amount</label>
+                            <input type="number" step="0.01" name="amount" class="form-control form-control-premium" placeholder="0.00" required>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="commission_amount" class="form-label">Amount (₨)</label>
-                        <input type="number" step="0.01" min="0" id="commission_amount" name="amount" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="commission_reference" class="form-label">Reference</label>
-                        <input type="text" id="commission_reference" name="reference" class="form-control" placeholder="Optional reference">
-                    </div>
-                    <div class="mb-3">
-                        <label for="commission_notes" class="form-label">Notes</label>
-                        <textarea id="commission_notes" name="notes" class="form-control" rows="3" placeholder="Additional details"></textarea>
+                    <div class="mb-0">
+                        <label class="form-label small fw-700 text-uppercase ls-1">Remarks / Notes</label>
+                        <textarea name="notes" class="form-control form-control-premium" rows="3" placeholder="Enter remarks..."></textarea>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Commission</button>
+                <div class="modal-footer bg-light px-5">
+                    <button type="button" class="btn btn-premium btn-light border" data-bs-dismiss="modal">Dismiss</button>
+                    <button type="submit" class="btn btn-premium btn-primary px-4">Finalize Entry</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
-<!-- Payment Modal -->
-<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="paymentModalLabel">Record Payment</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="POST" action="{{ route('personal_accounts.payments.store') }}" class="needs-validation" novalidate>
-                @csrf
-                <input type="hidden" name="redirect_to" value="{{ request()->fullUrl() }}">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="payment_user_id" class="form-label">Individual</label>
-                        <select id="payment_user_id" name="user_id" class="form-select" required>
-                            <option value="">Select Individual</option>
-                            @foreach($usersForForms as $userOption)
-                                <option value="{{ $userOption->id }}">{{ $userOption->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="payment_commission_id" class="form-label">Apply To Commission (Optional)</label>
-                        <select id="payment_commission_id" name="commission_id" class="form-select">
-                            <option value="">Unassigned Payment</option>
-                        </select>
-                        <div class="form-text">Outstanding commissions for the selected individual will appear here.</div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="payment_date" class="form-label">Payment Date</label>
-                        <input type="date" id="payment_date" name="payment_date" class="form-control" value="{{ now()->toDateString() }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="payment_amount" class="form-label">Amount (₨)</label>
-                        <input type="number" step="0.01" min="0" id="payment_amount" name="amount" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="payment_reference" class="form-label">Reference</label>
-                        <input type="text" id="payment_reference" name="reference" class="form-control" placeholder="Optional reference">
-                    </div>
-                    <div class="mb-3">
-                        <label for="payment_notes" class="form-label">Notes</label>
-                        <textarea id="payment_notes" name="notes" class="form-control" rows="3" placeholder="Additional details"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Payment</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-@push('scripts')
-<script>
-    (() => {
-        const outstandingCommissions = @json($outstandingMap);
-        const paymentModal = document.getElementById('paymentModal');
-        const paymentUserSelect = document.getElementById('payment_user_id');
-        const paymentCommissionSelect = document.getElementById('payment_commission_id');
-
-        const populateCommissionOptions = (userId) => {
-            paymentCommissionSelect.innerHTML = '<option value="">Unassigned Payment</option>';
-            if (!userId || !outstandingCommissions[userId]) {
-                return;
-            }
-
-            outstandingCommissions[userId].forEach((commission) => {
-                const option = document.createElement('option');
-                option.value = commission.id;
-                option.textContent = commission.label;
-                paymentCommissionSelect.appendChild(option);
-            });
-        };
-
-        paymentUserSelect.addEventListener('change', (event) => {
-            populateCommissionOptions(event.target.value);
-        });
-
-        paymentModal.addEventListener('show.bs.modal', (event) => {
-            const triggerButton = event.relatedTarget;
-            if (!triggerButton) {
-                paymentUserSelect.value = '';
-                populateCommissionOptions(null);
-                return;
-            }
-
-            const userId = triggerButton.getAttribute('data-user-id');
-            if (userId) {
-                paymentUserSelect.value = userId;
-                populateCommissionOptions(userId);
-            }
-        });
-    })();
-</script>
-@endpush
 @endsection

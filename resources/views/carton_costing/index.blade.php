@@ -81,10 +81,17 @@
 
             <div class="row g-3 mb-3">
                 <div class="col-md-12">
-                    <label for="flute_info" class="form-label">Flute Factors</label>
-                    <div class="form-control" id="flute_info" readonly>
+                    <label class="form-label">Flute Factors</label>
+                    <div class="d-flex flex-wrap gap-3 align-items-center">
                         @foreach ($fluteFactors as $flute => $factor)
-                            <span class="badge bg-secondary me-2">{{ $flute }} = {{ number_format($factor, 2) }}</span>
+                            <div class="input-group input-group-sm" style="width: 150px;">
+                                <span class="input-group-text">Flute {{ $flute }}</span>
+                                <input type="number" class="form-control flute-factor-input" 
+                                       name="flute_factors[{{ $flute }}]" 
+                                       data-flute="{{ $flute }}" 
+                                       value="{{ old("flute_factors.$flute", $formData['flute_factors'][$flute] ?? $factor) }}" 
+                                       step="0.01" min="1" required>
+                            </div>
                         @endforeach
                     </div>
                 </div>
@@ -339,11 +346,20 @@
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const templates = @json($layerTemplates);
-        const fluteFactors = @json($fluteFactors);
         const resultData = {
             ply: {{ $result ? (int) $formData['ply'] : 'null' }},
             layers: @json($result['layers'] ?? []),
         };
+
+        function getFluteFactors() {
+            const factors = {};
+            document.querySelectorAll('.flute-factor-input').forEach(input => {
+                factors[input.dataset.flute] = parseFloat(input.value) || 1.0;
+            });
+            return factors;
+        }
+
+        const fluteFactorInputs = document.querySelectorAll('.flute-factor-input');
 
         const plySelect = document.getElementById('ply');
         const layerContainer = document.getElementById('layer-fields');
@@ -355,7 +371,7 @@
             savedLayers[currentPly] = initialLayers;
         }
 
-        const defaultFlute = Object.keys(fluteFactors)[0] || null;
+        const defaultFlute = Object.keys(getFluteFactors())[0] || null;
 
         function getDefaultLayers(ply) {
             return templates[ply].map(layer => ({
@@ -400,7 +416,8 @@
             const rate = parseFloat(row.querySelector('[data-field="rate"]').value) || 0;
             const fluteField = row.querySelector('[data-field="flute"]');
             const fluteValue = fluteField ? fluteField.value : null;
-            const factor = fluteValue ? (fluteFactors[fluteValue] || 1.0) : 1.0;
+            const currentFactors = getFluteFactors();
+            const factor = fluteValue ? (currentFactors[fluteValue] || 1.0) : 1.0;
             
             if (gsm > 0 && rate > 0) {
                 // Formula: layerCost = (weightKg * factor) * (rate / TaxFactor)
@@ -435,12 +452,13 @@
                 const resultLayer = (resultData.ply === ply && resultData.layers[index]) ? resultData.layers[index] : null;
                 const amountValue = resultLayer ? Number(resultLayer.cost).toFixed(2) : '';
 
+                const currentFactors = getFluteFactors();
                 const card = document.createElement('div');
                 card.className = 'card mb-3';
                 card.dataset.layerIndex = index;
 
                 const fluteOptions = layer.is_flute
-                    ? Object.keys(fluteFactors).map(flute => `<option value="${flute}" ${data.flute === flute ? 'selected' : ''}>${flute} (×${fluteFactors[flute].toFixed(2)})</option>`).join('')
+                    ? Object.keys(currentFactors).map(flute => `<option value="${flute}" ${data.flute === flute ? 'selected' : ''}>${flute} (×${currentFactors[flute].toFixed(2)})</option>`).join('')
                     : '';
 
                 const fluteMarkup = layer.is_flute
@@ -523,9 +541,9 @@
 
             // Formulas in mm
             let deckleAddition = 0;
-            if (ply === 3) deckleAddition = 12 + 10;
-            else if (ply === 5) deckleAddition = 20 + 10;
-            else if (ply === 7) deckleAddition = 22 + 10;
+            if (ply === 3) deckleAddition = 12;
+            else if (ply === 5) deckleAddition = 20;
+            else if (ply === 7) deckleAddition = 25;
 
             const reelSizeMm = W_mm + H_mm + deckleAddition;
             const sheetLengthMm = 2 * (L_mm + W_mm) + 75;
@@ -538,11 +556,25 @@
         [lengthInput, widthInput, heightInput, uomSelect, plySelect, 
          document.getElementById('deckle_size_input'), 
          document.getElementById('sheet_length_input'),
-         document.getElementById('paper_tax_rate')].forEach(el => {
+         document.getElementById('paper_tax_rate'),
+         ...fluteFactorInputs].forEach(el => {
             el.addEventListener('input', () => {
                 updateDynamicCalculations();
-                // When dimensions or tax changes, update all layer amounts as well
+                // When dimensions or tax or flute factors change, update all layer amounts as well
                 layerContainer.querySelectorAll('[data-layer-index]').forEach(calculateLayerAmount);
+                
+                // If flute factors change, also update the multiplier labels in dropdowns
+                if (el.classList.contains('flute-factor-input')) {
+                    const factors = getFluteFactors();
+                    document.querySelectorAll('select[data-field="flute"]').forEach(select => {
+                        const currentVal = select.value;
+                        const flute = el.dataset.flute;
+                        const option = select.querySelector(`option[value="${flute}"]`);
+                        if (option) {
+                            option.textContent = `${flute} (×${factors[flute].toFixed(2)})`;
+                        }
+                    });
+                }
             });
         });
 

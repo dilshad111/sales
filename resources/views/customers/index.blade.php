@@ -17,11 +17,18 @@
     <div class="card-body">
         <form method="GET">
             <div class="row g-3">
-                <div class="col-md-9">
+                <div class="col-md-7">
                     <div class="input-group input-group-merge">
                         <span class="input-group-text"><i class="fas fa-search text-muted"></i></span>
                         <input type="text" name="search" class="form-control" placeholder="Search by name, email, or phone..." value="{{ request('search') }}">
                     </div>
+                </div>
+                <div class="col-md-2">
+                    <select name="per_page" class="form-select" onchange="this.form.submit()">
+                        <option value="20" {{ request('per_page', 20) == 20 ? 'selected' : '' }}>20 Records</option>
+                        <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50 Records</option>
+                        <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100 Records</option>
+                    </select>
                 </div>
                 <div class="col-md-3">
                     <button type="submit" class="btn btn-outline-primary w-100">
@@ -81,7 +88,7 @@
                             <form method="POST" action="{{ route('customers.destroy', $customer) }}" class="d-inline">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-icon btn-sm btn-outline-danger" onclick="return confirm('Delete this customer? This action cannot be undone.')" title="Delete">
+                                <button type="submit" class="btn btn-icon btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this record?')" title="Delete">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </form>

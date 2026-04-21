@@ -1,154 +1,196 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Bill')
+@section('title', 'Edit Sale Invoice')
 
 @section('content')
-<h1><i class="fas fa-edit me-2"></i>Edit Bill</h1>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h3 class="mb-0 fw-bold">
+        <span class="text-muted fw-light">Sale Invoice /</span> Edit Details
+    </h3>
+    <a href="{{ route('bills.show', $bill) }}" class="btn btn-label-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Back to Invoice
+    </a>
+</div>
+
+<div class="card shadow-none border">
+    <div class="card-body">
+<link href="{{ asset('css/select2.min.css') }}" rel="stylesheet" />
+<link href="{{ asset('css/select2-bootstrap-5-theme.min.css') }}" rel="stylesheet" />
 <form id="billForm" method="POST" action="{{ route('bills.update', $bill) }}">
     @csrf
     @method('PUT')
-    <style>
-        #itemsTable .form-control, 
-        #itemsTable .form-select {
-            padding: 1rem 1.2rem;
-            font-size: 1.25rem;
-            height: auto;
-            border-radius: 0.85rem;
-            font-weight: 500;
-        }
-        #itemsTable .select2-container--bootstrap-5 .select2-selection {
-            min-height: 60px;
-            padding-top: 12px;
-            border-radius: 0.85rem;
-        }
-        #itemsTable .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
-            line-height: 36px;
-            font-size: 1.25rem;
-            font-weight: 500;
-        }
-        .table > :not(caption) > * > * {
-            padding: 1.25rem 0.5rem;
-        }
-        #itemsTable thead th {
-            text-align: center !important;
-            vertical-align: middle;
-            font-size: 0.85rem;
-            letter-spacing: 1px;
-        }
-    </style>
 
-    <!-- Bill Number and Date Row -->
-    <div class="row g-3 mb-3">
-        <div class="col-md-6">
-            <label for="bill_number" class="form-label"><i class="fas fa-hashtag me-1"></i>Bill Number</label>
-            <input type="text" class="form-control" id="bill_number" value="{{ $bill->bill_number }}" disabled>
-            <small class="form-text text-muted">Bill number cannot be changed</small>
-        </div>
-        <div class="col-md-6">
-            <label for="bill_date" class="form-label"><i class="fas fa-calendar me-1"></i>Bill Date</label>
-            <input type="date" class="form-control" id="bill_date" name="bill_date" required value="{{ $bill->bill_date->format('Y-m-d') }}">
-        </div>
-    </div>
 
-    <!-- Customer Dropdown Row -->
-    <div class="row g-3 mb-3">
+    <!-- Header Section -->
+    <div class="row g-3 mb-4">
         <div class="col-md-4">
-            <label for="customer_id" class="form-label"><i class="fas fa-users me-1"></i>Customer</label>
-            <select class="form-select" id="customer_id" name="customer_id" required>
+            <div class="d-flex align-items-center mb-2">
+                <div class="bg-label-primary p-2 rounded me-2">
+                    <i class="fas fa-hashtag"></i>
+                </div>
+                <label for="bill_number" class="form-label mb-0 fw-semibold text-uppercase small ls-1">Invoice Number</label>
+            </div>
+            <input type="text" class="form-control bg-light fw-bold" id="bill_number" value="{{ $bill->bill_number }}" disabled style="font-family: 'Outfit', sans-serif;">
+            <div class="form-text mt-1" style="font-size: 0.75rem;">System generated reference</div>
+        </div>
+        <div class="col-md-4">
+            <div class="d-flex align-items-center mb-2">
+                <div class="bg-label-info p-2 rounded me-2">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <label for="bill_date" class="form-label mb-0 fw-semibold text-uppercase small ls-1">Invoice Date</label>
+            </div>
+            <input type="date" class="form-control" id="bill_date" name="bill_date" required value="{{ $bill->bill_date->format('Y-m-d') }}" max="{{ date('Y-m-d') }}">
+        </div>
+        <div class="col-md-4">
+            <div class="d-flex align-items-center mb-2">
+                <div class="bg-label-warning p-2 rounded me-2">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <label for="customer_id" class="form-label mb-0 fw-semibold text-uppercase small ls-1">Select Customer</label>
+            </div>
+            <select class="form-select select2" id="customer_id" name="customer_id" required disabled>
                 <option value="">Select Customer</option>
                 @foreach($customers as $customer)
                     <option value="{{ $customer->id }}" data-address="{{ $customer->address }}" {{ $bill->customer_id == $customer->id ? 'selected' : '' }}>{{ $customer->name }}</option>
                 @endforeach
             </select>
+            <input type="hidden" name="customer_id" value="{{ $bill->customer_id }}">
+            <div class="form-text mt-1" style="font-size: 0.75rem;">Customer cannot be changed on edit</div>
         </div>
     </div>
 
-    <!-- Customer Address Row -->
-    <div class="row g-3 mb-4">
+    <!-- Address Section -->
+    <div class="row mb-4">
         <div class="col-12">
-            <label for="customer_address" class="form-label"><i class="fas fa-map-marker-alt me-1"></i>Customer Address</label>
-            <textarea class="form-control" id="customer_address" name="customer_address" rows="3" readonly>{{ $bill->customer ? $bill->customer->address : '' }}</textarea>
+            <div class="bg-light p-3 rounded-3 border-start border-primary border-4">
+                <label for="customer_address" class="form-label fw-bold text-muted small text-uppercase mb-2">
+                    <i class="fas fa-map-marker-alt me-1"></i> Billing Address
+                </label>
+                <textarea class="form-control border-0 bg-transparent p-0 fs-6 fw-medium" id="customer_address" name="customer_address" rows="1" readonly>{{ $bill->customer ? $bill->customer->address : 'No address provided' }}</textarea>
+            </div>
         </div>
     </div>
 
     <!-- Items Section -->
     <div class="row g-4">
         <div class="col-12">
-            <h4 class="mb-3"><i class="fas fa-shopping-cart me-2"></i>Bill Items</h4>
-            <div class="table-responsive">
-                <table class="table table-bordered align-middle" id="itemsTable" style="min-width: 1600px;">
-                    <thead class="table-light">
-                        <tr>
-                            <th style="min-width: 550px;">Item</th>
-                            <th style="width: 220px;">Qty</th>
-                            <th style="width: 250px;">Rate</th>
-                            <th style="width: 280px;">Total Amount</th>
-                            <th style="width: 320px;">Delivery Date</th>
-                            <th style="width: 450px;">Remarks</th>
-                            <th style="width: 150px;">Action</th>
-                        </tr>
-                    </thead>
+            <h4 class="mb-3"><i class="fas fa-shopping-cart me-2"></i>Invoice Items</h4>
+            <div class="card shadow-none border-0 overflow-hidden">
+                <div class="table-responsive">
+                    <table class="table mb-0 align-middle table-sm" id="itemsTable">
+                        <thead>
+                            <tr>
+                                <th class="ps-3" style="min-width:280px;">Item Description</th>
+                                <th class="text-center" style="width:90px;">Qty</th>
+                                <th class="text-center" style="width:110px;">Rate</th>
+                                <th class="text-center" style="width:120px;">Total</th>
+                                <th class="text-center" style="width:140px;">Delivery</th>
+                                <th class="text-center" style="width:200px;">Remarks</th>
+                                <th class="text-center" style="width:80px;">Action</th>
+                            </tr>
+                        </thead>
                     <tbody id="itemsBody">
                         @foreach($bill->billItems as $index => $billItem)
                         <tr class="item-row">
-                            <td style="min-width: 550px;">
-                                <select class="form-select item-select" name="items[{{ $index }}][item_id]" required>
+                            <td style="min-width:280px;">
+                                <select class="form-select form-select-sm item-select" name="items[{{ $index }}][item_id]" required>
                                     <option value="">Select Item</option>
                                     @foreach($itemsForCustomer as $item)
                                         <option value="{{ $item->id }}" data-price="{{ $item->price }}" {{ $billItem->item_id == $item->id ? 'selected' : '' }}>{{ $item->name }}</option>
                                     @endforeach
                                 </select>
                             </td>
-                            <td style="width: 220px;">
-                                <input type="text" class="form-control text-end qty-input" name="items[{{ $index }}][quantity]" value="{{ $billItem->quantity }}" required>
+                            <td style="width:90px;">
+                                <input type="text" class="form-control form-control-sm text-end qty-input" name="items[{{ $index }}][quantity]" value="{{ $billItem->quantity }}" required>
                             </td>
-                            <td style="width: 250px;">
-                                <input type="text" class="form-control text-end rate-input" name="items[{{ $index }}][rate]" value="{{ number_format($billItem->price, 2) }}" required>
+                            <td style="width:110px;">
+                                <input type="text" class="form-control form-control-sm text-end rate-input" name="items[{{ $index }}][rate]" value="{{ number_format($billItem->price, 2) }}" required>
                             </td>
-                            <td style="width: 280px;">
-                                <input type="text" class="form-control text-end total-input" value="{{ number_format($billItem->total, 2) }}" readonly>
+                            <td style="width:120px;">
+                                <input type="text" class="form-control form-control-sm text-end total-input" value="{{ number_format($billItem->total, 2) }}" readonly>
                             </td>
-                            <td style="width: 320px;">
-                                <input type="date" class="form-control delivery-date-input" name="items[{{ $index }}][delivery_date]" value="{{ $billItem->delivery_date ? $billItem->delivery_date->format('Y-m-d') : '' }}">
+                            <td style="width:140px;">
+                                <input type="date" class="form-control form-control-sm delivery-date-input" name="items[{{ $index }}][delivery_date]" value="{{ $billItem->delivery_date ? $billItem->delivery_date->format('Y-m-d') : '' }}">
                             </td>
-                            <td style="width: 450px;">
-                                <input type="text" class="form-control remarks-input" name="items[{{ $index }}][remarks]" value="{{ $billItem->remarks }}" placeholder="Remarks">
+                            <td style="width:200px;">
+                                <input type="text" class="form-control form-control-sm remarks-input" name="items[{{ $index }}][remarks]" value="{{ $billItem->remarks }}" placeholder="Remarks">
                             </td>
-                            <td class="text-center" style="width: 150px;">
-                                <button type="button" class="btn btn-outline-danger btn-sm remove-item" {{ $bill->billItems->count() == 1 ? 'disabled' : '' }}>Remove</button>
+                            <td class="text-center" style="width:80px;">
+                                <button type="button" class="btn btn-outline-danger btn-sm remove-item" {{ $bill->billItems->count() == 1 ? 'disabled' : '' }}><i class="fas fa-trash"></i></button>
                             </td>
                         </tr>
                         @endforeach
                     </tbody>
+                    <tfoot class="table-light">
+                        <tr class="fw-bold">
+                            <td class="text-end">Total:</td>
+                            <td class="text-end text-primary" id="totalQtyDisplay">0</td>
+                            <td></td>
+                            <td class="text-end text-primary" id="totalAmountDisplay">0.00</td>
+                            <td colspan="3"></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
             <button type="button" id="addItem" class="btn btn-secondary btn-sm mt-2"><i class="fas fa-plus me-1"></i>Add Item</button>
 
+            {{-- Additional Expenses Section --}}
+            <div class="mt-4">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h5 class="mb-0"><i class="fas fa-receipt me-2 text-warning"></i>Additional Expenses</h5>
+                    <button type="button" id="addExpense" class="btn btn-outline-warning btn-sm">
+                        <i class="fas fa-plus me-1"></i>Add Additional Expense
+                    </button>
+                </div>
+                <div id="expensesContainer">
+                    @foreach($bill->billExpenses as $ei => $expense)
+                    <div class="expense-row d-flex gap-2 align-items-center mb-2">
+                        <input type="text" class="form-control" name="expenses[{{ $ei }}][description]" value="{{ $expense->description }}" placeholder="Expense Details" style="flex:2;">
+                        <input type="text" class="form-control text-end expense-amount-input" name="expenses[{{ $ei }}][amount]" value="{{ number_format($expense->amount, 2) }}" placeholder="0.00" style="flex:1; max-width:180px;">
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-expense" title="Remove"><i class="fas fa-times"></i></button>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+
             <div class="row justify-content-end mt-4">
                 <div class="col-md-6 col-lg-5">
                     <table class="table table-sm mb-0">
-                        <tbody>
-                            <tr>
-                                <th>Sub Total</th>
-                                <td class="text-end"><span id="subTotal">{{ number_format($bill->billItems->sum('total'), 2) }}</span></td>
+                        <tbody class="border-top-0">
+                            <tr class="border-bottom-0">
+                                <th class="text-muted fw-normal py-2">Sub Total</th>
+                                <td class="text-end fw-bold py-2"><span id="subTotal">{{ number_format($bill->billItems->sum('total'), 2) }}</span></td>
                             </tr>
-                            <tr>
-                                <th>Discount</th>
-                                <td>
-                                    <input type="text" class="form-control form-control-sm text-end currency-input" id="discount" name="discount" value="{{ number_format($bill->discount, 2) }}">
+                            <tr class="border-bottom-0">
+                                <th class="text-muted fw-normal py-2">Discount</th>
+                                <td class="py-1">
+                                    <input type="text" class="form-control form-control-sm text-end currency-input border-dashed" id="discount" name="discount" value="{{ number_format($bill->discount, 2) }}">
                                 </td>
                             </tr>
-                            <tr>
-                                <th>Tax</th>
-                                <td>
-                                    <input type="text" class="form-control form-control-sm text-end currency-input" id="tax" name="tax" value="{{ number_format($bill->tax, 2) }}">
+                            <tr class="border-bottom-0">
+                                <th class="text-muted fw-normal py-2">Tax (%)</th>
+                                <td class="py-1">
+                                    <input type="text" class="form-control form-control-sm text-end border-dashed" id="tax_percent" name="tax_percent" value="{{ number_format($bill->tax_percent, 2, '.', '') }}">
                                 </td>
                             </tr>
-                            <tr class="table-light">
-                                <th class="fw-semibold">Grand Total</th>
-                                <td class="text-end fw-semibold"><span id="grandTotal">{{ number_format($bill->total, 2) }}</span></td>
+                            <tr class="border-bottom-0">
+                                <th class="text-muted fw-normal py-2">Tax Amount</th>
+                                <td class="text-end fw-bold py-2">
+                                    <input type="hidden" id="tax" name="tax" value="{{ number_format($bill->tax, 2, '.', '') }}">
+                                    <span id="taxAmountDisplay">{{ number_format($bill->tax, 2) }}</span>
+                                </td>
+                            </tr>
+                            <tr id="expensesSummaryRow" {{ $bill->billExpenses->sum('amount') > 0 ? '' : 'style=display:none;' }} class="border-bottom-0">
+                                <th class="text-muted fw-normal py-2">Expenses</th>
+                                <td class="text-end fw-bold py-2"><span id="expensesTotal">{{ number_format($bill->billExpenses->sum('amount'), 2) }}</span></td>
+                            </tr>
+                            <tr class="bg-label-primary border-top border-primary border-2">
+                                <th class="fw-bold py-3 fs-5">Grand Total</th>
+                                <td class="text-end fw-bold py-3 fs-5 text-primary">
+                                    <span class="currency-symbol small me-1">{{ $companySetting->currency_symbol ?? 'Rs.' }}</span>
+                                    <span id="grandTotal">{{ number_format($bill->total, 2) }}</span>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -157,15 +199,17 @@
         </div>
     </div>
 
-    <div class="mt-4">
-        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Update Bill</button>
-        <a href="{{ route('bills.show', $bill) }}" class="btn btn-info ms-2"><i class="fas fa-eye me-1"></i>View Bill</a>
-        <a href="{{ route('bills.index') }}" class="btn btn-secondary ms-2"><i class="fas fa-times me-1"></i>Cancel</a>
+    <div class="mt-4 border-top pt-4">
+        <button type="submit" class="btn btn-primary btn-lg shadow-sm"><i class="fas fa-save me-1"></i>Update Invoice</button>
+        <a href="{{ route('bills.show', $bill) }}" class="btn btn-label-info btn-lg ms-2"><i class="fas fa-eye me-1"></i>View Invoice</a>
+        <a href="{{ route('bills.index') }}" class="btn btn-label-secondary btn-lg ms-2"><i class="fas fa-times me-1"></i>Cancel</a>
     </div>
 </form>
+</div>
+</div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- Scripts handled by layout -->
+@push('scripts')
 <script>
 (() => {
     const parseNumber = (value) => {
@@ -191,7 +235,9 @@
     const itemsBody = document.getElementById('itemsBody');
     const addItemBtn = document.getElementById('addItem');
     const discountInput = document.getElementById('discount');
-    const taxInput = document.getElementById('tax');
+    const taxPercentInput = document.getElementById('tax_percent');
+    const taxHiddenInput = document.getElementById('tax');
+    const taxDisplay = document.getElementById('taxAmountDisplay');
     const subTotalEl = document.getElementById('subTotal');
     const grandTotalEl = document.getElementById('grandTotal');
     let itemIndex = itemsBody.querySelectorAll('.item-row').length;
@@ -219,18 +265,86 @@
         totalInput.value = formatCurrency(total);
     };
 
+    const expensesContainer = document.getElementById('expensesContainer');
+    const expensesSummaryRow = document.getElementById('expensesSummaryRow');
+    const expensesTotalEl = document.getElementById('expensesTotal');
+    let expenseIndex = {{ $bill->billExpenses->count() }};
+
     const updateTotals = () => {
         let subtotal = 0;
         itemsBody.querySelectorAll('.total-input').forEach((input) => {
             subtotal += parseNumber(input.value);
         });
 
+        let totalQty = 0;
+        itemsBody.querySelectorAll('.qty-input').forEach((input) => {
+            totalQty += parseNumber(input.value);
+        });
+
+        const qtyDisplay = document.getElementById('totalQtyDisplay');
+        if (qtyDisplay) qtyDisplay.textContent = formatQuantity(totalQty);
+
+        const amountDisplay = document.getElementById('totalAmountDisplay');
+        if (amountDisplay) amountDisplay.textContent = formatCurrency(subtotal);
+
+        let expensesSum = 0;
+        expensesContainer.querySelectorAll('.expense-amount-input').forEach((input) => {
+            expensesSum += parseNumber(input.value);
+        });
+
         const discount = parseNumber(discountInput.value);
-        const tax = parseNumber(taxInput.value);
+        const taxPercent = parseNumber(taxPercentInput.value);
+        const taxableAmount = subtotal - discount;
+        const taxAmount = taxableAmount * (taxPercent / 100);
+
+        taxHiddenInput.value = taxAmount.toFixed(2);
+        if (taxDisplay) taxDisplay.textContent = formatCurrency(taxAmount);
 
         subTotalEl.textContent = formatCurrency(subtotal);
-        grandTotalEl.textContent = formatCurrency(subtotal - discount + tax);
+        expensesTotalEl.textContent = formatCurrency(expensesSum);
+        expensesSummaryRow.style.display = expensesSum > 0 ? '' : 'none';
+        grandTotalEl.textContent = formatCurrency(subtotal - discount + taxAmount + expensesSum);
     };
+
+    const addExpenseRow = () => {
+        const row = document.createElement('div');
+        row.className = 'expense-row d-flex gap-2 align-items-center mb-2';
+        row.innerHTML = `
+            <input type="text" class="form-control" name="expenses[${expenseIndex}][description]" placeholder="Expense Details (e.g. Freight, Labour)" style="flex:2;">
+            <input type="text" class="form-control text-end expense-amount-input" name="expenses[${expenseIndex}][amount]" placeholder="0.00" style="flex:1; max-width:180px;">
+            <button type="button" class="btn btn-outline-danger btn-sm remove-expense" title="Remove"><i class="fas fa-times"></i></button>
+        `;
+        expensesContainer.appendChild(row);
+
+        const amountInput = row.querySelector('.expense-amount-input');
+        amountInput.addEventListener('input', updateTotals);
+        amountInput.addEventListener('focusout', () => {
+            amountInput.value = formatCurrency(parseNumber(amountInput.value));
+            updateTotals();
+        });
+        row.querySelector('.remove-expense').addEventListener('click', () => {
+            row.remove();
+            updateTotals();
+        });
+        expenseIndex++;
+    };
+
+    document.getElementById('addExpense').addEventListener('click', addExpenseRow);
+
+    // Attach events to pre-existing expense rows (from loaded data)
+    expensesContainer.querySelectorAll('.expense-amount-input').forEach((input) => {
+        input.addEventListener('input', updateTotals);
+        input.addEventListener('focusout', () => {
+            input.value = formatCurrency(parseNumber(input.value));
+            updateTotals();
+        });
+    });
+    expensesContainer.querySelectorAll('.remove-expense').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            btn.closest('.expense-row').remove();
+            updateTotals();
+        });
+    });
 
     const handleItemChange = (select) => {
         const row = select.closest('.item-row');
@@ -345,22 +459,32 @@
         addItemRow();
     });
 
-    [discountInput, taxInput].forEach((input) => {
+    [discountInput, taxPercentInput].forEach((input) => {
         input.addEventListener('input', updateTotals);
         input.addEventListener('focusout', () => {
-            input.value = formatCurrency(parseNumber(input.value));
+            if (input === taxPercentInput) {
+                input.value = parseNumber(input.value).toFixed(2);
+            } else {
+                input.value = formatCurrency(parseNumber(input.value));
+            }
             updateTotals();
         });
-        input.value = formatCurrency(parseNumber(input.value));
     });
+
+    // Format initial values
+    taxPercentInput.value = parseNumber(taxPercentInput.value).toFixed(2);
+    discountInput.value = formatCurrency(parseNumber(discountInput.value));
 
     const loadItemsForCustomer = (customerId) => {
         if (!customerId) return;
 
-        fetch(`/items/get-by-customer/${customerId}`)
+        fetch(`{{ url('items/get-by-customer') }}/${customerId}`)
             .then(response => response.json())
             .then(items => {
                 itemsBody.querySelectorAll('.item-select').forEach(select => {
+                    if ($(select).data('select2')) {
+                        $(select).select2('destroy');
+                    }
                     select.innerHTML = '<option value="">Select Item</option>';
                     items.forEach(item => {
                         const option = document.createElement('option');
@@ -368,6 +492,12 @@
                         option.textContent = item.name;
                         option.dataset.price = item.price;
                         select.appendChild(option);
+                    });
+                    $(select).select2({
+                        theme: 'bootstrap-5',
+                        placeholder: 'Select Item',
+                        allowClear: true,
+                        width: '100%'
                     });
                 });
             })
@@ -399,4 +529,5 @@
     refreshRemoveButtons();
 })();
 </script>
+@endpush
 @endsection
