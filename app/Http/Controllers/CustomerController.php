@@ -47,6 +47,7 @@ class CustomerController extends Controller
             'status' => 'required|in:active,inactive',
             'opening_balance' => 'nullable|numeric',
             'type' => 'required|in:Official,Un-Official',
+            'excess_qty_percent' => 'nullable|numeric|min:0|max:100',
         ]);
 
         $validated['opening_balance'] = $validated['opening_balance'] ?? 0;
@@ -85,6 +86,7 @@ class CustomerController extends Controller
             'status' => 'required|in:active,inactive',
             'opening_balance' => 'nullable|numeric',
             'type' => 'required|in:Official,Un-Official',
+            'excess_qty_percent' => 'nullable|numeric|min:0|max:100',
         ]);
 
         $validated['opening_balance'] = $validated['opening_balance'] ?? 0;

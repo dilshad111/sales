@@ -11,7 +11,7 @@ class Customer extends Model implements Auditable
 {
     use AuditableTrait;
 
-    protected $fillable = ['name', 'phone', 'email', 'address', 'status', 'type', 'opening_balance'];
+    protected $fillable = ['name', 'phone', 'email', 'address', 'status', 'type', 'opening_balance', 'excess_qty_percent'];
 
     public function bills()
     {

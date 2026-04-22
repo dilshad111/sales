@@ -9,7 +9,7 @@ git add .
 echo.
 
 set msg=Purchases form and report Updated
-set /p msg="Enter commit message (Default: %msg%): "
+set /p msg="Sales Order updated (Default: %msg%): "
 if "%msg%"=="" set msg=Update: %date% %time%
 
 echo.

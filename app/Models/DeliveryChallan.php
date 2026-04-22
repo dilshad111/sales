@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class DeliveryChallan extends Model
 {
-    protected $fillable = ['challan_number', 'customer_id', 'challan_date', 'total', 'status', 'bill_id', 'remarks', 'vehicle_number'];
+    protected $fillable = ['challan_number', 'customer_id', 'challan_date', 'total', 'status', 'bill_id', 'remarks', 'vehicle_number', 'sales_order_id'];
 
     protected $casts = [
         'challan_date' => 'date',

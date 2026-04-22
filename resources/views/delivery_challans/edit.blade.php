@@ -54,11 +54,11 @@
                     <thead class="table-light">
                         <tr class="text-center">
                             <th style="min-width:280px;">Item</th>
-                            <th style="width:100px;">Qty.</th>
+                            <th style="width:150px;">Qty.</th>
                             <th style="width:250px;">Bundles</th>
                             <th style="width:150px; display:none;">Rate</th>
                             <th style="width:150px; display:none;">Total</th>
-                            <th style="width:250px;">Remarks</th>
+                            <th style="width:150px;">Remarks</th>
                             <th style="width:80px;">Action</th>
                         </tr>
                     </thead>

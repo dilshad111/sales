@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\PurchaseDeliveryChallanController;
+use App\Http\Controllers\SalesOrderController;
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AuditController;
@@ -66,6 +67,7 @@ Route::middleware(['auth', \App\Http\Middleware\CheckUserRights::class])->group(
 
     // Delivery Challans
     Route::post('delivery-challans/create-bill', [DeliveryChallanController::class, 'createBill'])->name('delivery_challans.create_bill');
+    Route::get('delivery-challans/select-so', [DeliveryChallanController::class, 'selectSO'])->name('delivery_challans.select_so');
     Route::get('delivery-challans/{deliveryChallan}/print', [DeliveryChallanController::class, 'print'])->name('delivery_challans.print');
     Route::resource('delivery-challans', DeliveryChallanController::class)
         ->names('delivery_challans')
@@ -153,6 +155,9 @@ Route::middleware(['auth', \App\Http\Middleware\CheckUserRights::class])->group(
     Route::resource('purchase-invoices', PurchaseInvoiceController::class)->names('purchase_invoices');
     Route::resource('recoveries', RecoveryController::class);
     Route::resource('purchase-delivery-challans', PurchaseDeliveryChallanController::class)->names('purchase_delivery_challans');
+    Route::resource('sales-orders', SalesOrderController::class)
+        ->names('sales_orders')
+        ->parameters(['sales-orders' => 'salesOrder']);
     
     Route::post('financial-years/{financialYear}/close', [FinancialYearController::class, 'close'])->name('financial_years.close');
     Route::post('financial-years/{financialYear}/reopen', [FinancialYearController::class, 'reopen'])->name('financial_years.reopen');

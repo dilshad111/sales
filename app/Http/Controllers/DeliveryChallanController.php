@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\DeliveryChallan;
 use App\Models\DeliveryChallanItem;
+use App\Models\SalesOrder;
+use App\Models\SalesOrderItem;
 use App\Models\Bill;
 use App\Models\BillItem;
 use App\Models\BillExpense;
@@ -50,14 +52,51 @@ class DeliveryChallanController extends Controller
     /**
      * Show the form for creating a new delivery challan.
      */
-    public function create()
+    public function create(Request $request)
     {
+        $salesOrder = null;
+        if ($request->has('sales_order_id')) {
+            $salesOrder = SalesOrder::with('customer', 'items.item')->find($request->sales_order_id);
+        }
+
         $customers = Customer::where('status', 'active')
             ->where('type', 'Un-Official')
             ->get();
-        $nextChallanNumber = 'DC' . str_pad(DeliveryChallan::count() + 1, 4, '0', STR_PAD_LEFT);
+            
+        $setting = \App\Models\CompanySetting::first();
+        $prefix = $setting ? ($setting->challan_prefix ?? 'DC') : 'DC';
+        
+        $lastChallan = DeliveryChallan::where('challan_number', 'like', $prefix . '%')->orderBy('id', 'desc')->first();
+        $nextNumber = 1;
+        if ($lastChallan) {
+            $lastNumStr = str_replace($prefix, '', $lastChallan->challan_number);
+            $nextNumber = (int) $lastNumStr + 1;
+        }
+        $nextChallanNumber = $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
 
-        return view('delivery_challans.create', compact('customers', 'nextChallanNumber'));
+        return view('delivery_challans.create', compact('customers', 'nextChallanNumber', 'salesOrder'));
+    }
+
+    /**
+     * Show selection screen for Sales Orders.
+     */
+    public function selectSO(Request $request)
+    {
+        $query = SalesOrder::with('customer')
+            ->where('status', 'pending');
+
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('so_number', 'like', "%$search%")
+                  ->orWhereHas('customer', function($cq) use ($search) {
+                      $cq->where('name', 'like', "%$search%");
+                  });
+            });
+        }
+
+        $salesOrders = $query->latest()->paginate(20);
+        return view('delivery_challans.select_so', compact('salesOrders'));
     }
 
     /**
@@ -89,6 +128,7 @@ class DeliveryChallanController extends Controller
             $sanitizedItems = collect($request->input('items', []))->map(function ($item) use ($sanitizeDecimal, $sanitizeInteger) {
                 return [
                     'item_id' => $item['item_id'] ?? null,
+                    'sales_order_item_id' => $item['sales_order_item_id'] ?? null,
                     'quantity' => $sanitizeInteger($item['quantity'] ?? 0),
                     'bundles' => $item['bundles'] ?? null,
                     'rate' => $sanitizeDecimal($item['rate'] ?? 0),
@@ -104,9 +144,11 @@ class DeliveryChallanController extends Controller
 
             $validated = $request->validate([
                 'customer_id' => 'required|exists:customers,id',
+                'sales_order_id' => 'nullable|exists:sales_orders,id',
                 'challan_date' => 'required|date|before_or_equal:today',
                 'items' => 'required|array|min:1',
                 'items.*.item_id' => 'required|exists:items,id',
+                'items.*.sales_order_item_id' => 'nullable|exists:sales_order_items,id',
                 'items.*.quantity' => 'required|integer|min:1',
                 'items.*.bundles' => 'nullable|string|max:255',
                 'items.*.rate' => 'nullable|numeric|min:0',
@@ -116,12 +158,16 @@ class DeliveryChallanController extends Controller
                 'vehicle_number' => 'nullable|string|max:255',
             ]);
 
+            $customer = Customer::find($validated['customer_id']);
+            $excessPercent = (float) ($customer->excess_qty_percent ?? 0);
+
             DB::beginTransaction();
             try {
                 $subtotal = 0;
 
                 $challan = DeliveryChallan::create([
                     'customer_id' => $validated['customer_id'],
+                    'sales_order_id' => $validated['sales_order_id'] ?? null,
                     'challan_date' => $validated['challan_date'],
                     'status' => 'pending',
                     'remarks' => $validated['remarks'] ?? null,
@@ -130,6 +176,20 @@ class DeliveryChallanController extends Controller
 
                 foreach ($validated['items'] as $itemData) {
                     $item = Item::find($itemData['item_id']);
+                    
+                    if ($itemData['sales_order_item_id']) {
+                        $soItem = SalesOrderItem::find($itemData['sales_order_item_id']);
+                        if ($soItem) {
+                            $deliveredSoFar = $soItem->delivered_quantity;
+                            $maxTotalAllowed = $soItem->quantity * (1 + ($excessPercent / 100));
+                            $remainingAllowed = $maxTotalAllowed - $deliveredSoFar;
+
+                            if ($itemData['quantity'] > ($remainingAllowed + 0.01)) { // Added small margin for float comparison
+                                throw new \Exception("Quantity for item " . $item->name . " exceeds the remaining allowed limit. (Remaining: " . floor($remainingAllowed) . ")");
+                            }
+                        }
+                    }
+
                     $rate = (float) ($item->price ?? 0);
                     $quantity = (int) $itemData['quantity'];
                     $lineTotal = $rate * $quantity;
@@ -138,6 +198,7 @@ class DeliveryChallanController extends Controller
                     DeliveryChallanItem::create([
                         'delivery_challan_id' => $challan->id,
                         'item_id' => $itemData['item_id'],
+                        'sales_order_item_id' => $itemData['sales_order_item_id'] ?? null,
                         'quantity' => $quantity,
                         'bundles' => $itemData['bundles'] ?? null,
                         'price' => $rate,

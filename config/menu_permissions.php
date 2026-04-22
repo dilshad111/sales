@@ -56,6 +56,12 @@ return [
             'icon' => 'fas fa-truck',
             'color' => 'text-primary'
         ],
+        'sales_orders' => [
+            'label' => 'Sales Orders',
+            'route' => 'sales_orders.index',
+            'icon' => 'fas fa-file-invoice',
+            'color' => 'text-primary'
+        ],
         'payments' => [
             'label' => 'Payments',
             'route' => 'payments.index',
@@ -281,7 +287,7 @@ return [
     'form_groups' => [
         'General' => ['dashboard'],
         'Purchases' => ['suppliers', 'agents', 'purchase_items', 'purchase_delivery_challans', 'purchase_invoices', 'recoveries'],
-        'Sales' => ['customers', 'items', 'delivery_challans', 'bills', 'direct_sale_invoices', 'salman_commission'],
+        'Sales' => ['customers', 'items', 'sales_orders', 'delivery_challans', 'bills', 'direct_sale_invoices', 'salman_commission'],
         'Finance' => ['accounts', 'payments', 'personal_accounts', 'payment_parties', 'receive_voucher', 'payment_voucher', 'journal_voucher', 'vouchers'],
         'Costing' => ['carton_costing', 'costing_report'],
         'Reports' => ['outstanding_payments', 'sales', 'customer_statement', 'supplier_statement', 'cash_statement', 'cash_ledger', 'bank_ledger', 'writeoff_ledger', 'payment_parties_list', 'inventory', 'purchase_report', 'agent_commission_report', 'principal_payout_report', 'trial_balance', 'profit_loss', 'balance_sheet'],

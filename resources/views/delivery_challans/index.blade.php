@@ -5,9 +5,23 @@
 @section('content')
 <div class="d-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-truck me-2 text-primary"></i>Delivery Challans</h1>
-    <a href="{{ route('delivery_challans.create') }}" class="btn btn-primary shadow-sm">
-        <i class="fas fa-plus fa-sm text-white-50 me-1"></i>Create Challan
-    </a>
+    <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle shadow-sm" type="button" id="createChallanDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-plus fa-sm text-white-50 me-1"></i>Create Challan
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="createChallanDropdown">
+            <li>
+                <a class="dropdown-item py-2" href="{{ route('delivery_challans.create') }}">
+                    <i class="fas fa-edit me-2 text-primary"></i>Direct Delivery Challan
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item py-2" href="{{ route('delivery_challans.select_so') }}">
+                    <i class="fas fa-file-invoice me-2 text-info"></i>DC from Sales Order
+                </a>
+            </li>
+        </ul>
+    </div>
 </div>
 
 <div class="card shadow-sm border-0 mb-4">
