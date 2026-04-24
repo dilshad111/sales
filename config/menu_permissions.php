@@ -14,6 +14,12 @@ return [
             'icon' => 'fas fa-users',
             'color' => 'text-info'
         ],
+        'items' => [
+            'label' => 'Sales Items',
+            'route' => 'items.index',
+            'icon' => 'fas fa-boxes-stacked',
+            'color' => 'text-success'
+        ],
         'inventory' => [
             'label' => 'Inventory Report',
             'route' => 'reports.inventory',
@@ -288,9 +294,9 @@ return [
         'General' => ['dashboard'],
         'Purchases' => ['suppliers', 'agents', 'purchase_items', 'purchase_delivery_challans', 'purchase_invoices', 'recoveries'],
         'Sales' => ['customers', 'items', 'sales_orders', 'delivery_challans', 'bills', 'direct_sale_invoices', 'salman_commission'],
-        'Finance' => ['accounts', 'payments', 'personal_accounts', 'payment_parties', 'receive_voucher', 'payment_voucher', 'journal_voucher', 'vouchers'],
+        'Finance' => ['accounts', 'ledger', 'payments', 'personal_accounts', 'payment_parties', 'receive_voucher', 'payment_voucher', 'journal_voucher', 'vouchers'],
         'Costing' => ['carton_costing', 'costing_report'],
-        'Reports' => ['outstanding_payments', 'sales', 'customer_statement', 'supplier_statement', 'cash_statement', 'cash_ledger', 'bank_ledger', 'writeoff_ledger', 'payment_parties_list', 'inventory', 'purchase_report', 'agent_commission_report', 'principal_payout_report', 'trial_balance', 'profit_loss', 'balance_sheet'],
+        'Reports' => ['outstanding_payments', 'sales_report', 'customer_statement', 'supplier_statement', 'cash_statement', 'cash_ledger', 'bank_ledger', 'writeoff_ledger', 'payment_parties_list', 'inventory', 'purchase_report', 'agent_commission_report', 'principal_payout_report', 'trial_balance', 'profit_loss', 'balance_sheet'],
 
 
         'Settings' => ['users', 'user_rights', 'settings', 'audit_logs', 'banks', 'financial_years'],

@@ -5,7 +5,7 @@
 @section('content')
 <div class="d-flex align-items-center justify-content-between mb-4">
     <h4 class="fw-bold py-3 mb-0">
-        <span class="text-muted fw-light">Inventory /</span> Add Item
+        <span class="text-muted fw-light">Sales /</span> Add Item
     </h4>
     <a href="{{ route('items.index') }}" class="btn btn-outline-secondary">
         <i class="fas fa-arrow-left me-1"></i> Back to List

@@ -25,18 +25,22 @@
             <select class="form-select" id="customer_id" name="customer_id" required>
                 <option value="">Select Customer</option>
                 @foreach($customers as $customer)
-                    <option value="{{ $customer->id }}" data-address="{{ $customer->address }}" {{ $deliveryChallan->customer_id == $customer->id ? 'selected' : '' }}>{{ $customer->name }}</option>
+                    <option value="{{ $customer->id }}" data-address="{{ $customer->address }}" data-excess-percent="{{ $customer->excess_qty_percent }}" {{ $deliveryChallan->customer_id == $customer->id ? 'selected' : '' }}>{{ $customer->name }}</option>
                 @endforeach
             </select>
         </div>
     </div>
 
     <div class="row g-3 mb-4">
-        <div class="col-md-5">
+        <div class="col-md-4">
             <label for="customer_address" class="form-label"><i class="fas fa-map-marker-alt me-1"></i>Customer Address</label>
             <textarea class="form-control" id="customer_address" rows="2" readonly>{{ optional($deliveryChallan->customer)->address }}</textarea>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-2">
+            <label for="excess_percent" class="form-label"><i class="fas fa-percentage me-1"></i>Excess Allowed</label>
+            <input type="text" class="form-control bg-light" id="excess_percent" readonly value="{{ (float)optional($deliveryChallan->customer)->excess_qty_percent }}%">
+        </div>
+        <div class="col-md-3">
             <label for="remarks" class="form-label"><i class="fas fa-comment me-1"></i>Remarks</label>
             <textarea class="form-control" id="remarks" name="remarks" rows="2" placeholder="Optional remarks">{{ $deliveryChallan->remarks }}</textarea>
         </div>
@@ -230,6 +234,9 @@
     customerSelect.addEventListener('change', (e) => {
         const selectedOption = e.target.selectedOptions[0];
         customerAddressTextarea.value = selectedOption ? selectedOption.dataset.address : '';
+        const excessPercent = selectedOption ? (selectedOption.dataset.excessPercent || 0) : 0;
+        const excessDisplay = document.getElementById('excess_percent');
+        if (excessDisplay) excessDisplay.value = parseFloat(excessPercent) + '%';
         loadItemsForCustomer(e.target.value);
     });
 

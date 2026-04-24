@@ -5,7 +5,7 @@
 @section('content')
 <div class="d-flex align-items-center justify-content-between mb-4">
     <h4 class="fw-bold py-3 mb-0">
-        <span class="text-muted fw-light">Finance /</span> Items
+        <span class="text-muted fw-light">Sales /</span> Items
     </h4>
     <a href="{{ route('items.create') }}" class="btn btn-primary d-flex align-items-center">
         <i class="fas fa-plus me-1"></i> Add Item

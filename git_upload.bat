@@ -8,7 +8,7 @@ echo STAGING ALL CHANGES...
 git add .
 echo.
 
-set msg=Purchases form and report Updated
+set msg=Items missing updated
 set /p msg="Sales Order updated (Default: %msg%): "
 if "%msg%"=="" set msg=Update: %date% %time%
 

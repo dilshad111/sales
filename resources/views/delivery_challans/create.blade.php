@@ -46,7 +46,7 @@
                                     data-address="{{ $customer->address }}" 
                                     data-excess-percent="{{ $customer->excess_qty_percent }}"
                                     {{ (isset($salesOrder) && $salesOrder->customer_id == $customer->id) ? 'selected' : '' }}>
-                                    {{ $customer->name }} ({{ (float)$customer->excess_qty_percent }}% excess allowed)
+                                    {{ $customer->name }}
                                 </option>
                             @endforeach
                         </select>
@@ -57,9 +57,13 @@
                 </div>
 
                 <div class="row g-3">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label for="customer_address" class="form-label">Customer Address</label>
                         <input type="text" class="form-control" id="customer_address" readonly tabindex="-1" value="{{ isset($salesOrder) ? $salesOrder->customer->address : '' }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="excess_percent" class="form-label">Excess Allowed %</label>
+                        <input type="text" class="form-control bg-light" id="excess_percent" readonly tabindex="-1" value="{{ isset($salesOrder) ? (float)$salesOrder->customer->excess_qty_percent . '%' : '0%' }}">
                     </div>
                     <div class="col-md-3">
                         <label for="vehicle_number" class="form-label">Vehicle Number</label>
@@ -240,6 +244,15 @@ $(document).ready(function() {
         $('#totalQtyDisplay').text(total.toLocaleString());
     }
 
+    function toggleRemoveButtons() {
+        let rows = $('.item-row');
+        if (rows.length <= 1) {
+            rows.find('.remove-item').prop('disabled', true);
+        } else {
+            rows.find('.remove-item').prop('disabled', false);
+        }
+    }
+
     function checkExcessQty(row) {
         let qtyInput = row.find('.qty-input');
         let originalQty = parseFloat(row.find('.original-qty').val());
@@ -290,6 +303,7 @@ $(document).ready(function() {
         initSelect2(newRow.find('.item-select'), 'Select Item');
         itemIndex++;
         updateSNo();
+        toggleRemoveButtons();
         
         let customerId = $('#customer_id').val();
         if (customerId) {
@@ -302,6 +316,7 @@ $(document).ready(function() {
             $(this).closest('.item-row').remove();
             updateSNo();
             calculateTotalQty();
+            toggleRemoveButtons();
         } else {
             alert('At least one item is required.');
         }
@@ -310,7 +325,9 @@ $(document).ready(function() {
     $('#customer_id').on('change', function() {
         let selectedOption = $(this).find(':selected');
         let address = selectedOption.data('address');
+        let excessPercent = selectedOption.data('excess-percent') || 0;
         $('#customer_address').val(address || '');
+        $('#excess_percent').val(parseFloat(excessPercent) + '%');
 
         @if(!isset($salesOrder))
         let customerId = $(this).val();
@@ -370,6 +387,7 @@ $(document).ready(function() {
     });
 
     calculateTotalQty();
+    toggleRemoveButtons();
     @if(isset($salesOrder))
         $('.item-row').each(function() {
             checkExcessQty($(this));
