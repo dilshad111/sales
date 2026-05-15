@@ -224,8 +224,21 @@ class ReportController extends Controller
         if ($startDate) $paymentsQuery->where('payment_date', '>=', $startDate);
         if ($endDate) $paymentsQuery->where('payment_date', '<=', $endDate);
 
-        $payments = $paymentsQuery->orderBy('payment_date', 'desc')->orderBy('id', 'desc')->get();
-        $customers = Customer::where('type', 'Un-Official')->get();
+        $payments = $paymentsQuery->orderBy('payment_date', 'asc')->orderBy('id', 'asc')->get();
+        
+        $customers = Customer::where('type', 'Un-Official')
+            ->where(function($q) use ($startDate, $endDate) {
+                $q->whereHas('payments', function($pq) use ($startDate, $endDate) {
+                    if ($startDate) $pq->where('payment_date', '>=', $startDate);
+                    if ($endDate) $pq->where('payment_date', '<=', $endDate);
+                })
+                ->orWhereHas('bills', function($bq) use ($startDate, $endDate) {
+                    if ($startDate) $bq->where('bill_date', '>=', $startDate);
+                    if ($endDate) $bq->where('bill_date', '<=', $endDate);
+                });
+            })
+            ->get();
+
         $reports = [];
         
         foreach ($customers as $customer) {
@@ -252,7 +265,9 @@ class ReportController extends Controller
         $partySummary = [];
         foreach ($paymentParties as $party) {
             $partyAmount = $payments->where('payment_party_id', $party->id)->sum('amount');
-            $partySummary[] = ['name' => $party->name, 'amount' => $partyAmount > 0 ? $partyAmount : 0];
+            if ($partyAmount > 0) {
+                $partySummary[] = ['name' => $party->name, 'amount' => $partyAmount];
+            }
         }
 
         return view('reports.cash_statement', compact('reports', 'totalReceived', 'totalReceivable', 'partySummary', 'startDate', 'endDate'));
@@ -268,8 +283,21 @@ class ReportController extends Controller
         if ($startDate) $paymentsQuery->where('payment_date', '>=', $startDate);
         if ($endDate) $paymentsQuery->where('payment_date', '<=', $endDate);
 
-        $payments = $paymentsQuery->orderBy('payment_date', 'desc')->orderBy('id', 'desc')->get();
-        $customers = Customer::where('type', 'Un-Official')->get();
+        $payments = $paymentsQuery->orderBy('payment_date', 'asc')->orderBy('id', 'asc')->get();
+        
+        $customers = Customer::where('type', 'Un-Official')
+            ->where(function($q) use ($startDate, $endDate) {
+                $q->whereHas('payments', function($pq) use ($startDate, $endDate) {
+                    if ($startDate) $pq->where('payment_date', '>=', $startDate);
+                    if ($endDate) $pq->where('payment_date', '<=', $endDate);
+                })
+                ->orWhereHas('bills', function($bq) use ($startDate, $endDate) {
+                    if ($startDate) $bq->where('bill_date', '>=', $startDate);
+                    if ($endDate) $bq->where('bill_date', '<=', $endDate);
+                });
+            })
+            ->get();
+
         $reports = [];
         foreach ($customers as $customer) {
             $customerPayments = $payments->where('customer_id', $customer->id);
@@ -295,7 +323,9 @@ class ReportController extends Controller
         $partySummary = [];
         foreach ($paymentParties as $party) {
             $partyAmount = $payments->where('payment_party_id', $party->id)->sum('amount');
-            $partySummary[] = ['name' => $party->name, 'amount' => $partyAmount > 0 ? $partyAmount : 0];
+            if ($partyAmount > 0) {
+                $partySummary[] = ['name' => $party->name, 'amount' => $partyAmount];
+            }
         }
 
         $pdf = Pdf::loadView('reports.cash_statement_pdf', compact('reports', 'totalReceived', 'totalReceivable', 'partySummary', 'startDate', 'endDate'));
@@ -423,7 +453,7 @@ class ReportController extends Controller
         $paymentsQuery = Payment::with(['customer', 'paymentParty', 'bill']);
         if ($startDate) $paymentsQuery->where('payment_date', '>=', $startDate);
         if ($endDate) $paymentsQuery->where('payment_date', '<=', $endDate);
-        $payments = $paymentsQuery->orderBy('payment_date', 'desc')->get();
+        $payments = $paymentsQuery->orderBy('payment_date', 'asc')->orderBy('id', 'asc')->get();
         
         $headers = ['Date', 'Customer', 'Bill #', 'Payment Party', 'Amount', 'Remarks'];
         

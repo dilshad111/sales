@@ -268,6 +268,17 @@
         $decimal = round($payment->amount - floor($payment->amount), 2) * 100;
         $paise = ($decimal > 0) ? " and " . $f->format($decimal) . " Paise" : "";
         $amountWords = ($companySetting->currency_symbol ?? 'Rupees') . " " . ucwords($words) . $paise . " Only";
+
+        // Logo Base64
+        $logoBase64 = '';
+        if ($companySetting && $companySetting->logo_path) {
+            $logoPath = public_path('storage/' . $companySetting->logo_path);
+            if (file_exists($logoPath)) {
+                $type = pathinfo($logoPath, PATHINFO_EXTENSION);
+                $data = file_get_contents($logoPath);
+                $logoBase64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+            }
+        }
     @endphp
 
     <div class="receipt-box">
@@ -284,14 +295,16 @@
         </div>
 
         <div class="header-main">
-            <div class="company-info">
-                @if($companySetting && $companySetting->logo_path && extension_loaded('gd') && file_exists(public_path('storage/' . $companySetting->logo_path)))
-                    <img src="{{ public_path('storage/' . $companySetting->logo_path) }}" alt="Logo" style="max-height: 35px; margin-bottom: 5px; display:block;">
+            <div class="company-info" style="display: flex; align-items: center; gap: 15px; width: 60%;">
+                @if($logoBase64)
+                    <img src="{{ $logoBase64 }}" alt="Logo" style="max-height: 55px; width: auto; object-fit: contain;">
                 @endif
-                <div class="company-name">{{ $companySetting->name ?? 'Company Name' }}</div>
-                <div class="company-details" style="font-size: 9px; line-height: 1.2;">
-                    {{ $companySetting->address ?? '' }}<br>
-                    Contact: {{ $companySetting->phone ?? '' }}
+                <div>
+                    <div class="company-name" style="font-size: 18px; margin-bottom: 2px;">{{ $companySetting->name ?? 'Company Name' }}</div>
+                    <div class="company-details" style="font-size: 9px; line-height: 1.2;">
+                        {{ $companySetting->address ?? '' }}<br>
+                        Contact: {{ $companySetting->phone ?? '' }}
+                    </div>
                 </div>
             </div>
 

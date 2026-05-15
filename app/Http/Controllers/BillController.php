@@ -459,9 +459,12 @@ class BillController extends Controller
         $bill->load('customer', 'billItems.item', 'billExpenses');
 
         $pdf = Pdf::loadView('bills.pdf', compact('bill'))
-        ->setPaper('a4', 'portrait');
+            ->setPaper('a4', 'portrait');
 
-        return $pdf->download('bill_' . $bill->id . '.pdf');
+        $customerName = \Str::slug($bill->customer->name ?? 'Customer');
+        $fileName = $bill->bill_number . '_' . $customerName . '.pdf';
+
+        return $pdf->download($fileName);
     }
 
     public function print(Bill $bill)

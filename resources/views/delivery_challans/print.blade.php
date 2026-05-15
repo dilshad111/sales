@@ -199,6 +199,16 @@
 <body>
     @php
         $companySetting = \App\Models\CompanySetting::first();
+        // Logo Base64
+        $logoBase64 = '';
+        if ($companySetting && $companySetting->logo_path) {
+            $logoPath = public_path('storage/' . $companySetting->logo_path);
+            if (file_exists($logoPath)) {
+                $type = pathinfo($logoPath, PATHINFO_EXTENSION);
+                $data = file_get_contents($logoPath);
+                $logoBase64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+            }
+        }
     @endphp
 
     <div class="print-bar no-print">
@@ -208,14 +218,12 @@
     <div class="invoice-box">
         <!-- Header -->
         <div class="header-row">
-            <div class="company-block" style="display: flex; align-items: center; width: 75%;">
-                @if(optional($companySetting)->logo_path)
-                    <div style="margin-right: 25px;">
-                        <img src="{{ asset('storage/' . $companySetting->logo_path) }}" alt="Logo" style="max-height: 80px; max-width: 80px; object-fit: contain;">
-                    </div>
+            <div class="company-block" style="display: flex; align-items: center; width: 75%; gap: 20px;">
+                @if($logoBase64)
+                    <img src="{{ $logoBase64 }}" alt="Logo" style="max-height: 85px; width: auto; object-fit: contain;">
                 @endif
                 <div style="flex: 1;">
-                    <div class="company-name">{{ $companySetting->name }}</div>
+                    <div class="company-name" style="font-size: 28px;">{{ $companySetting->name }}</div>
                     <div class="company-info" style="line-height: 1.4; font-size: 13px;">
                         {!! nl2br(e($companySetting->address)) !!}<br>
                         @if($companySetting->phone) Ph: {{ $companySetting->phone }} @endif

@@ -93,12 +93,13 @@
         }
 
         .company-name {
-            font-size: 42px;
+            font-size: 32px;
             font-weight: 900;
-            color: #000;
+            color: #000080;
             text-transform: uppercase;
             letter-spacing: 2px;
             line-height: 1;
+            font-family: 'Arial', sans-serif;
         }
 
         .company-info {
@@ -157,10 +158,10 @@
         }
 
         .customer-name {
-            font-size: 18px;
+            font-size: 14pt;
             font-weight: 700;
-            color: #000;
-            margin-bottom: 5px;
+            color: #000080;
+            margin-bottom: 3px;
         }
 
         .customer-address {
@@ -185,7 +186,7 @@
             padding: 10px 8px;
             border-bottom: 2pt solid #000;
             border-right: 1pt solid #000;
-            text-align: left;
+            text-align: center;
         }
 
         .items-table td {
@@ -204,7 +205,11 @@
         .item-desc {
             font-weight: 700;
             color: #000;
+            font-size: 10px;
             white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
         }
 
         .item-remarks {
@@ -257,23 +262,28 @@
         }
 
         .total-label {
-            font-size: 18px;
-            color: #566a7f;
-        }
-
-        .total-value {
-            font-size: 24px;
-            color: #696cff;
+            font-size: 20px;
+            color: #000;
             font-weight: 800;
         }
 
+        .total-value {
+            font-size: 28px;
+            color: #696cff;
+            font-weight: 900;
+        }
+
         .footer {
-            margin-top: 80px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
             text-align: center;
-            font-size: 12px;
-            color: #000;
+            font-size: 11px;
+            color: #444;
             border-top: 1px solid #000;
-            padding-top: 20px;
+            padding-top: 10px;
+            background: #fff;
         }
         
         .clear { clear: both; }
@@ -286,19 +296,30 @@
         <a href="{{ route('bills.show', $bill) }}" class="btn btn-back">Back to App</a>
     </div>
 
+    @php
+        // Logo Base64
+        $logoBase64 = '';
+        if ($companySetting && $companySetting->logo_path) {
+            $logoPath = public_path('storage/' . $companySetting->logo_path);
+            if (file_exists($logoPath)) {
+                $type = pathinfo($logoPath, PATHINFO_EXTENSION);
+                $data = file_get_contents($logoPath);
+                $logoBase64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+            }
+        }
+    @endphp
+
     <div class="invoice-box">
         <!-- Header -->
         <table class="header-table">
             <tr>
                 <td style="width: 70%; vertical-align: top;">
-                    <div style="display: flex; align-items: center;">
-                        @if(optional($companySetting)->logo_path)
-                            <div style="margin-right: 25px;">
-                                <img src="{{ asset('storage/' . $companySetting->logo_path) }}" alt="Logo" style="max-height: 90px; max-width: 90px; object-fit: contain;">
-                            </div>
+                    <div style="display: flex; align-items: center; gap: 20px;">
+                        @if($logoBase64)
+                            <img src="{{ $logoBase64 }}" alt="Logo" style="max-height: 90px; width: auto; object-fit: contain;">
                         @endif
                         <div style="flex: 1;">
-                            <div class="company-name" style="margin-bottom: 2px;">{{ $companySetting->name }}</div>
+                            <div class="company-name" style="font-size: 32px; margin-bottom: 2px;">{{ $companySetting->name }}</div>
                             <div class="company-info" style="font-size: 14px; line-height: 1.4;">
                                 {!! nl2br(e($companySetting->address)) !!}<br>
                                 @if($companySetting->phone) Ph: {{ $companySetting->phone }} @endif
@@ -360,11 +381,11 @@
             <thead>
                 <tr>
                     <th style="width: 40px; text-align: center;">S. NO.</th>
-                    <th>DESCRIPTION</th>
+                    <th style="text-align: center;">DESCRIPTION</th>
                     <th style="width: 110px; text-align: center;">DELIVERY</th>
-                    <th style="width: 90px; text-align: right;">QTY</th>
-                    <th style="width: 90px; text-align: right;">RATE</th>
-                    <th style="width: 120px; text-align: right;">TOTAL</th>
+                    <th style="width: 90px; text-align: center;">QTY</th>
+                    <th style="width: 90px; text-align: center;">RATE</th>
+                    <th style="width: 120px; text-align: center;">TOTAL</th>
                 </tr>
             </thead>
             <tbody>

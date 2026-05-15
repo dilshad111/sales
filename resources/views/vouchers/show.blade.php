@@ -171,7 +171,7 @@
     </div>
 
     @php
-        // Condense entries by account to solve "Double Entry" visual confusion
+        // Condense entries by account
         $condensedEntries = collect($voucher->entries)->groupBy('account_id')->map(function ($items) {
             $totalDebit = $items->sum('debit');
             $totalCredit = $items->sum('credit');
@@ -184,63 +184,118 @@
                 'is_adjusted' => $items->count() > 1
             ];
         })->filter(fn($e) => $e->debit > 0.01 || $e->credit > 0.01);
+
+        // Logo Base64
+        $logoBase64 = '';
+        if ($companySetting && $companySetting->logo_path) {
+            $logoPath = public_path('storage/' . $companySetting->logo_path);
+            if (file_exists($logoPath)) {
+                $type = pathinfo($logoPath, PATHINFO_EXTENSION);
+                $data = file_get_contents($logoPath);
+                $logoBase64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+            }
+        }
+
+        // Additional info for specialized vouchers
+        $reference = $voucher->reference;
+        $customer = null;
+        $paymentParty = null;
+        if ($voucher->type === 'third_party_payment' && $reference instanceof \App\Models\Payment) {
+            $customer = $reference->customer;
+            $paymentParty = $reference->paymentParty;
+        }
     @endphp
 
     <div class="voucher-card">
-        <!-- Header Section -->
-        <div class="voucher-header text-white">
+        <!-- Professional Document Header -->
+        <div class="p-3 border-bottom bg-white rounded-top-4">
             <div class="row align-items-center">
                 <div class="col-md-7">
-                    <div class="d-flex align-items-center gap-4">
-                        <div class="bg-white bg-opacity-10 p-2 rounded-4 backdrop-blur">
-                            <i class="fas fa-shield-alt fa-2x"></i>
-                        </div>
+                    <div class="d-flex align-items-center gap-2">
+                        @if($logoBase64)
+                            <img src="{{ $logoBase64 }}" alt="Logo" style="max-height: 45px; width: auto;">
+                        @endif
                         <div>
-                            <span class="badge-voucher mb-2">
-                                @php
-                                     echo match($voucher->type) {
-                                         'PV' => 'Payment Voucher',
-                                         'RV' => 'Receive Voucher',
-                                         'JV' => 'Journal Voucher',
-                                         default => $voucher->type
-                                     };
-                                @endphp
-                            </span>
-                            <h2 class="h1 fw-bold mb-0" style="font-size: 2rem;">{{ $voucher->transaction_number }}</h2>
+                            <div class="h5 fw-bold mb-0 text-dark tracking-tight">{{ $companySetting->name }}</div>
+                            <div class="small text-muted" style="font-size: 0.75rem;">{{ $companySetting->address }}</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-5 text-md-end">
-                    <div class="d-inline-block text-start p-2 bg-white bg-opacity-10 rounded-4">
-                        <div class="small text-uppercase opacity-75 fw-bold mb-1 tracking-widest" style="font-size: 0.65rem;">Transaction Status</div>
-                        <div class="h5 mb-0 fw-bold d-flex align-items-center">
-                            <span class="bg-success rounded-circle me-2" style="width: 10px; height: 10px; box-shadow: var(--success-glow)"></span>
-                            Verified Post
+                    <div class="text-uppercase tracking-widest fw-bold text-primary mb-0" style="font-size: 0.7rem;">Document Title</div>
+                    <h1 class="h4 fw-black text-dark mb-0">
+                        {{ $voucher->formatted_type }}
+                    </h1>
+                </div>
+            </div>
+        </div>
+
+        <!-- Voucher Header Section -->
+        <div class="voucher-header text-white" style="padding: 1rem 2rem;">
+            <div class="row align-items-center">
+                <div class="col-md-7">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-white bg-opacity-10 p-2 rounded-3 backdrop-blur">
+                            <i class="fas fa-file-invoice-dollar fa-lg"></i>
+                        </div>
+                        <div>
+                            <div class="small text-uppercase opacity-75 fw-bold mb-0 tracking-widest" style="font-size: 0.6rem;">Transaction ID</div>
+                            <h2 class="h4 fw-bold mb-0">{{ $voucher->transaction_number }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-5 text-md-end">
+                    <div class="d-inline-block text-start p-1 px-3 bg-white bg-opacity-10 rounded-3">
+                        <div class="small text-uppercase opacity-75 fw-bold mb-0 tracking-widest" style="font-size: 0.55rem;">Posting Status</div>
+                        <div class="fw-bold d-flex align-items-center" style="font-size: 0.85rem;">
+                            <span class="bg-success rounded-circle me-2" style="width: 8px; height: 8px; box-shadow: var(--success-glow)"></span>
+                            Finalized
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="p-4 p-md-4">
+        <div class="p-3 p-md-3">
             <!-- Details Grid -->
-            <div class="row g-4 mb-5">
+            <div class="row g-3 mb-3">
                 <div class="col-md-3">
-                    <div class="info-card">
-                        <div class="small fw-600 text-uppercase text-muted mb-2 ls-1">Posting Date</div>
-                        <div class="h5 fw-bold mb-0 text-dark">{{ $voucher->date->format('l, d M Y') }}</div>
+                    <div class="info-card h-100" style="padding: 0.75rem 1rem;">
+                        <div class="small fw-700 text-uppercase text-muted mb-1 ls-1" style="font-size: 0.65rem;">Date of Issue</div>
+                        <div class="fw-bold mb-0 text-dark" style="font-size: 0.9rem;">{{ $voucher->date->format('d M Y') }}</div>
                     </div>
                 </div>
+                @if($voucher->payment_mode)
                 <div class="col-md-3">
-                    <div class="info-card">
-                        <div class="small fw-600 text-uppercase text-muted mb-2 ls-1">Method</div>
-                        <div class="h5 fw-bold mb-0 text-primary text-uppercase">{{ $voucher->payment_mode ?: 'Ledger Adjustment' }}</div>
+                    <div class="info-card h-100" style="padding: 0.75rem 1rem;">
+                        <div class="small fw-700 text-uppercase text-muted mb-1 ls-1" style="font-size: 0.65rem;">Method</div>
+                        <div class="fw-bold mb-0 text-primary text-uppercase" style="font-size: 0.9rem;">{{ $voucher->payment_mode }}</div>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="info-card bg-light border-0">
-                        <div class="small fw-600 text-uppercase text-muted mb-2 ls-1">Narration</div>
-                        <div class="h6 mb-0 text-dark fw-500 line-height-base">{{ $voucher->narration ?: 'Standard operational transaction entry with no additional remarks.' }}</div>
+                @endif
+                
+                @if($customer)
+                <div class="col-md-3">
+                    <div class="info-card h-100 border-primary border-opacity-25 bg-primary bg-opacity-5" style="padding: 0.75rem 1rem;">
+                        <div class="small fw-700 text-uppercase text-primary mb-1 ls-1" style="font-size: 0.65rem;">Customer</div>
+                        <div class="fw-bold mb-0 text-dark text-truncate" style="font-size: 0.9rem;">{{ $customer->name }}</div>
+                    </div>
+                </div>
+                @endif
+
+                @if($paymentParty)
+                <div class="col-md-3">
+                    <div class="info-card h-100 border-warning border-opacity-25 bg-warning bg-opacity-5" style="padding: 0.75rem 1rem;">
+                        <div class="small fw-700 text-uppercase text-warning mb-1 ls-1" style="font-size: 0.65rem;">Partner</div>
+                        <div class="fw-bold mb-0 text-dark text-truncate" style="font-size: 0.9rem;">{{ $paymentParty->name }}</div>
+                    </div>
+                </div>
+                @endif
+
+                <div class="col-12">
+                    <div class="info-card bg-light border-0" style="padding: 0.75rem 1rem;">
+                        <div class="small fw-700 text-uppercase text-muted mb-1 ls-1" style="font-size: 0.65rem;">Narration</div>
+                        <div class="mb-0 text-dark fw-500 line-height-base" style="font-size: 0.85rem;">{{ $voucher->narration ?: 'No additional narration provided.' }}</div>
                     </div>
                 </div>
             </div>

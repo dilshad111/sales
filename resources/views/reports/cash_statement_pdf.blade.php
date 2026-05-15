@@ -5,81 +5,103 @@
     <title>Cash Statement Report</title>
     <style>
         @page {
-            margin: 0.5cm;
+            margin: 0.8cm;
         }
         body {
-            font-family: 'DejaVu Sans', sans-serif;
-            font-size: 8.5pt;
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 9pt;
             color: #333;
             margin: 0;
             padding: 0;
-            line-height: 1.4;
+            line-height: 1.5;
         }
         .container {
-            padding: 10px 20px;
+            padding: 0;
         }
         .header {
-            text-align: center;
-            border-bottom: 2px solid #2c3e50;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-        }
-        .logo {
-            max-height: 70px;
-            margin-bottom: 5px;
-        }
-        .company-name {
-            font-size: 18pt;
-            font-weight: bold;
-            color: #2c3e50;
-            margin: 0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .company-details {
-            font-size: 8pt;
-            color: #555;
-            margin: 2px 0;
-        }
-        .report-title-container {
-            text-align: center;
-            margin: 10px 0;
-        }
-        .report-title {
-            display: inline-block;
-            font-size: 13pt;
-            font-weight: bold;
-            text-transform: uppercase;
-            color: #fff;
-            background-color: #2c3e50;
-            padding: 4px 20px;
-            border-radius: 4px;
-        }
-        .summary-row {
+            border-bottom: 3px solid #1a2a6c;
+            padding-bottom: 15px;
             margin-bottom: 20px;
         }
+        .header table {
+            width: 100%;
+            border: none;
+        }
+        .header td {
+            border: none;
+            padding: 0;
+            vertical-align: top;
+            background: transparent;
+        }
+        .logo {
+            max-height: 80px;
+        }
+        .company-info {
+            padding-left: 20px;
+        }
+        .company-name {
+            font-size: 24pt;
+            font-weight: bold;
+            color: #1a2a6c;
+            margin: 0;
+            text-transform: uppercase;
+            line-height: 1;
+        }
+        .company-details {
+            font-size: 9pt;
+            color: #555;
+            margin: 4px 0 0 0;
+            line-height: 1.3;
+        }
+        .report-info {
+            text-align: right;
+        }
+        .report-title {
+            font-size: 18pt;
+            font-weight: bold;
+            color: #1a2a6c;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 0;
+        }
+        .period-box {
+            margin-top: 10px;
+            font-size: 8.5pt;
+            color: #444;
+            background: #f8f9fa;
+            padding: 5px 10px;
+            display: inline-block;
+            border-radius: 4px;
+            border: 1px solid #eee;
+        }
+        .summary-row {
+            margin-bottom: 25px;
+        }
         .metric-card {
-            border: 1px solid #dee2e6;
-            padding: 10px;
+            border: 1px solid #e0e0e0;
+            padding: 12px;
             text-align: center;
-            background-color: #fcfcfc;
+            background-color: #ffffff;
             width: 48%;
             float: left;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
         .metric-card.right { float: right; }
         .metric-label {
-            font-size: 7.5pt;
+            font-size: 8pt;
             text-transform: uppercase;
-            color: #7f8c8d;
-            margin-bottom: 4px;
-            font-weight: bold;
+            color: #666;
+            margin-bottom: 6px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
         }
         .metric-value {
-            font-size: 14pt;
+            font-size: 16pt;
             font-weight: bold;
         }
-        .val-received { color: #27ae60; }
-        .val-receivable { color: #c0392b; }
+        .val-received { color: #2e7d32; }
+        .val-receivable { color: #d32f2f; }
 
         .customer-section {
             margin-bottom: 25px;
@@ -151,19 +173,40 @@
     </style>
 </head>
 <body>
+    @php
+        // Logo Base64 for PDF
+        $logoBase64 = '';
+        if ($companySetting->logo_path) {
+            $logoPath = public_path('storage/' . $companySetting->logo_path);
+            if (file_exists($logoPath)) {
+                $type = pathinfo($logoPath, PATHINFO_EXTENSION);
+                $data = file_get_contents($logoPath);
+                $logoBase64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+            }
+        }
+    @endphp
     <div class="container">
         <div class="header">
-            @if(extension_loaded('gd') && $companySetting->logo_path)
-                <img src="{{ storage_path('app/public/' . $companySetting->logo_path) }}" class="logo">
-            @endif
-            <div class="company-name">{{ $companySetting->name }}</div>
-            <div class="company-details">{{ $companySetting->address }}</div>
-            <div class="company-details">Phone: {{ $companySetting->phone }} | Email: {{ $companySetting->email }}</div>
-            <div class="company-details">Period: {{ $startDate ?: 'All' }} to {{ $endDate ?: 'Present' }}</div>
-        </div>
-
-        <div class="report-title-container">
-            <div class="report-title">Cash Statement Report</div>
+            <table>
+                <tr>
+                    <td style="width: 15%;">
+                        @if($logoBase64)
+                            <img src="{{ $logoBase64 }}" class="logo">
+                        @endif
+                    </td>
+                    <td class="company-info">
+                        <div class="company-name">{{ $companySetting->name }}</div>
+                        <div class="company-details">{{ $companySetting->address }}</div>
+                        <div class="company-details">Phone: {{ $companySetting->phone }} | Email: {{ $companySetting->email }}</div>
+                    </td>
+                    <td class="report-info">
+                        <div class="report-title">Cash Statement</div>
+                        <div class="period-box">
+                            Period: <strong>{{ $startDate ?: 'All' }}</strong> to <strong>{{ $endDate ?: 'Present' }}</strong>
+                        </div>
+                    </td>
+                </tr>
+            </table>
         </div>
 
         <div class="summary-row clearfix">

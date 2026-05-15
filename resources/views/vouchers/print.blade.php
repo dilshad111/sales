@@ -11,67 +11,67 @@
         
         body { 
             font-family: 'Segoe UI', Arial, sans-serif; 
-            font-size: 11px; 
+            font-size: 10px; 
             color: #000; 
-            line-height: 1.2; 
+            line-height: 1.1; 
             margin: 0; 
             padding: 0; 
             background: #fff; 
         }
         
         .container { 
-            width: 170mm; 
+            width: 180mm; 
             height: 120mm; 
             margin: 0 auto;
-            padding: 5mm 8mm; 
+            padding: 4mm 6mm; 
             position: relative; 
             box-sizing: border-box;
             background: #fff;
-            border: 0.1mm solid #000;
+            border: 0.1mm solid #333;
         }
 
         /* Use table for header for robust alignment */
         .full-width-table { width: 100%; border-collapse: collapse; }
         
-        .company-header-table { width: 100%; margin-bottom: 5px; }
-        .company-name { font-size: 26px; font-weight: bold; margin-bottom: 0; letter-spacing: 1px; }
-        .company-address { font-size: 11px; line-height: 1.2; }
+        .company-header-table { width: 100%; margin-bottom: 3px; }
+        .company-name { font-size: 20px; font-weight: bold; margin-bottom: 0; letter-spacing: 0.5px; }
+        .company-address { font-size: 9px; line-height: 1.1; }
         
-        .logo-box { width: 30mm; height: 30mm; border: none; text-align: left; vertical-align: top; }
-        .logo-box img { width: 30mm; height: 30mm; object-fit: contain; }
+        .logo-box { width: 25mm; height: 25mm; border: none; text-align: left; vertical-align: top; }
+        .logo-box img { width: 25mm; height: 25mm; object-fit: contain; }
 
-        .title-section { text-align: center; margin: 3px 0; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 4px 0; background-color: #f2f2f2; }
-        .receipt-title { font-size: 18px; font-weight: bold; text-transform: uppercase; margin: 0; }
+        .title-section { text-align: center; margin: 2px 0; border-top: 0.5px solid #000; border-bottom: 0.5px solid #000; padding: 2px 0; background-color: #f8f8f8; }
+        .receipt-title { font-size: 14px; font-weight: bold; text-transform: uppercase; margin: 0; letter-spacing: 1px; }
         
-        .meta-table { width: 100%; margin-bottom: 5px; border-bottom: 0.5px solid #000; }
-        .meta-cell { font-size: 11px; font-weight: bold; padding: 4px 0; }
+        .meta-table { width: 100%; margin-bottom: 3px; border-bottom: 0.3px solid #000; }
+        .meta-cell { font-size: 9.5px; font-weight: bold; padding: 3px 0; }
 
-        .parties-table { width: 100%; margin-bottom: 8px; border-bottom: 1px solid #000; }
-        .party-cell { width: 50%; vertical-align: top; padding-bottom: 5px; }
-        .party-label { font-size: 8px; font-weight: bold; text-transform: uppercase; margin-bottom: 1px; }
-        .party-name { font-size: 12px; font-weight: bold; display: block; }
+        .parties-table { width: 100%; margin-bottom: 5px; border-bottom: 0.5px solid #000; }
+        .party-cell { width: 50%; vertical-align: top; padding-bottom: 3px; }
+        .party-label { font-size: 7.5px; font-weight: bold; text-transform: uppercase; margin-bottom: 0; color: #555; }
+        .party-name { font-size: 11px; font-weight: bold; display: block; }
 
-        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 5px; table-layout: fixed; }
-        .items-table th { border-bottom: 1.5px solid #000; padding: 4px; text-align: left; text-transform: uppercase; font-size: 9px; background-color: #f2f2f2; }
-        .items-table td { padding: 6px 4px; font-size: 11px; vertical-align: top; border-bottom: 0.1px solid #eee; }
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 3px; table-layout: fixed; }
+        .items-table th { border-bottom: 1px solid #000; padding: 3px; text-align: left; text-transform: uppercase; font-size: 8px; background-color: #f8f8f8; }
+        .items-table td { padding: 4px 3px; font-size: 10px; vertical-align: top; border-bottom: 0.1px solid #eee; }
         .text-right { text-align: right; }
 
-        .summary-row-table { width: 100%; margin-top: 10px; }
-        .summary-box { border: 1px solid #000; padding: 5px; width: 62%; vertical-align: top; }
-        .words-label { font-size: 8px; font-weight: bold; text-transform: uppercase; display: block; }
-        .words-value { font-weight: bold; font-size: 11px; font-style: italic; }
+        .summary-row-table { width: 100%; margin-top: 5px; }
+        .summary-box { border: 0.5px solid #000; padding: 3px 5px; width: 62%; vertical-align: top; }
+        .words-label { font-size: 7px; font-weight: bold; text-transform: uppercase; display: block; }
+        .words-value { font-weight: bold; font-size: 9.5px; font-style: italic; }
         
         .total-box { text-align: right; vertical-align: top; width: 38%; }
-        .total-wrapper { border-bottom: 2px solid #000; display: inline-block; padding-bottom: 2px; }
-        .total-amount { font-size: 24px; font-weight: bold; margin: 0; padding: 0; }
-        .payment-mode { font-size: 9px; font-weight: bold; text-transform: uppercase; margin-top: 2px; display: block; }
+        .total-wrapper { border-bottom: 1.5px solid #000; display: inline-block; padding-bottom: 1px; }
+        .total-amount { font-size: 18px; font-weight: bold; margin: 0; padding: 0; }
+        .payment-mode { font-size: 8px; font-weight: bold; text-transform: uppercase; margin-top: 1px; display: block; }
 
         .signature-table { width: 100%; }
         .signature-table td { width: 33.33%; text-align: center; vertical-align: bottom; }
-        .signature-line { border-top: 1px solid #000; width: 80%; margin: 0 auto 4px; }
-        .signature-label { font-size: 10px; font-weight: bold; text-transform: uppercase; color: #000; }
+        .signature-line { border-top: 0.5px solid #000; width: 80%; margin: 0 auto 3px; }
+        .signature-label { font-size: 9px; font-weight: bold; text-transform: uppercase; color: #000; }
 
-        .print-footer { position: absolute; bottom: 2mm; width: 100%; left: 0; font-size: 7px; text-align: center; opacity: 0.5; }
+        .print-footer { position: absolute; bottom: 1mm; width: 100%; left: 0; font-size: 6px; text-align: center; opacity: 0.5; }
         
         @media print {
             body { padding: 0; margin: 0; }
@@ -88,18 +88,28 @@
             'PV' => 'PAYMENT VOUCHER',
             'RV' => 'PAYMENT RECEIPT',
             'JV' => 'JOURNAL VOUCHER',
-            default => $voucher->formatted_type
+            'third_party_payment' => 'THIRD PARTY PAYMENT VOUCHER',
+            default => strtoupper($voucher->formatted_type)
         };
 
-        // Convert logo to base64 to ensure it displays in all environments
+        // Convert logo to base64
         $logoBase64 = '';
         if ($company->logo_path) {
-            $path = storage_path('app/public/' . $company->logo_path);
+            $path = public_path('storage/' . $company->logo_path);
             if (file_exists($path)) {
                 $type = pathinfo($path, PATHINFO_EXTENSION);
                 $data = file_get_contents($path);
                 $logoBase64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
             }
+        }
+
+        // Additional info for specialized vouchers
+        $reference = $voucher->reference;
+        $customer = null;
+        $paymentParty = null;
+        if ($voucher->type === 'third_party_payment' && $reference instanceof \App\Models\Payment) {
+            $customer = $reference->customer;
+            $paymentParty = $reference->paymentParty;
         }
     @endphp
 
@@ -107,22 +117,27 @@
         <!-- HEADER TABLE -->
         <table class="company-header-table">
             <tr>
-                <td class="logo-box">
-                    @if($logoBase64)
-                        <img src="{{ $logoBase64 }}" alt="Logo">
-                    @else
-                        <div style="font-size: 8px; color: #ccc;">LOGO</div>
-                    @endif
+                <td style="width: 70%; vertical-align: middle;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            @if($logoBase64)
+                                <td style="width: 60px; vertical-align: middle; padding-right: 15px;">
+                                    <img src="{{ $logoBase64 }}" alt="Logo" style="max-height: 55px; display: block;">
+                                </td>
+                            @endif
+                            <td style="vertical-align: middle;">
+                                <div class="company-name text-uppercase" style="font-size: 24px; color: #000; line-height: 1.1;">{{ $company->name ?? config('app.name') }}</div>
+                                <div class="company-address" style="font-size: 10px; font-weight: bold; margin-top: 2px; color: #333;">
+                                    {{ $company->address ?? 'Address not set.' }}
+                                    @if($company->phone) | Ph: {{ $company->phone }} @endif
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
                 </td>
-                <td style="text-align: center; vertical-align: middle;">
-                    <div class="company-name text-uppercase" style="font-size: 38px; letter-spacing: 2px; color: #000;">{{ $company->name ?? config('app.name') }}</div>
-                    <div class="company-address" style="font-size: 13px; font-weight: bold;">
-                        {{ $company->address ?? 'Address not set.' }}
-                        @if($company->phone) <br>Contact: {{ $company->phone }} @endif
-                        @if($company->email) | Email: {{ $company->email }} @endif
-                    </div>
+                <td style="width: 30%; text-align: right; vertical-align: top;">
+                    <div style="font-size: 22px; font-weight: 900; color: #eeeeee; text-transform: uppercase; letter-spacing: 2px;">ORIGINAL</div>
                 </td>
-                <td style="width: 23mm;"></td> <!-- Spacer for balance -->
             </tr>
         </table>
 
@@ -134,20 +149,42 @@
         <table class="meta-table">
             <tr>
                 <td class="meta-cell" style="text-align: left; padding-left: 5px; width: 35%;">
-                    VOUCHER NO: <span style="font-size: 12px;">{{ $voucher->transaction_number }}</span>
+                    VOUCHER NO: <span style="font-size: 12px; font-weight: 900;">{{ $voucher->transaction_number }}</span>
                 </td>
                 <td class="meta-cell" style="text-align: center; width: 30%;">
-                    <div style="background: #000; color: #fff; display: inline-block; padding: 2px 10px; border-radius: 2px; text-transform: uppercase; font-size: 9px;">
-                        Payment Mode: <span style="font-weight: bold;">{{ $voucher->payment_mode ?: 'N/A' }}</span>
+                    @if($voucher->payment_mode)
+                    <div style="background: #000; color: #fff; display: inline-block; padding: 2px 10px; border-radius: 2px; text-transform: uppercase; font-size: 8px;">
+                        Payment Mode: <span style="font-weight: bold;">{{ $voucher->payment_mode }}</span>
                     </div>
+                    @endif
                 </td>
                 <td class="meta-cell" style="text-align: right; padding-right: 15px; width: 35%;">
-                    DATE: <span style="font-size: 12px;">{{ $voucher->date->format('d/m/Y') }}</span>
+                    DATE: <span style="font-size: 12px; font-weight: 900;">{{ $voucher->date->format('d/m/Y') }}</span>
                 </td>
             </tr>
         </table>
 
         <!-- PARTIES TABLE -->
+        @if($customer || $paymentParty)
+        <table class="parties-table" style="background-color: #f9f9f9;">
+            <tr>
+                @if($customer)
+                <td class="party-cell" style="padding-left: 5px; border-right: 0.5px solid #eee;">
+                    <span class="party-label">Customer / Debtor:</span>
+                    <span class="party-name">{{ $customer->name }}</span>
+                    <span style="font-size: 9px; color: #666;">{{ $customer->address }}</span>
+                </td>
+                @endif
+                @if($paymentParty)
+                <td class="party-cell" style="text-align: right; padding-right: 15px;">
+                    <span class="party-label">Collected Via (Partner):</span>
+                    <span class="party-name" style="color: #000;">{{ $paymentParty->name }}</span>
+                    <span style="font-size: 9px; color: #666;">Third Party Collection Adjustment</span>
+                </td>
+                @endif
+            </tr>
+        </table>
+        @else
         <table class="parties-table">
             <tr>
                 <td class="party-cell" style="padding-left: 5px;">
@@ -174,6 +211,7 @@
                 </td>
             </tr>
         </table>
+        @endif
 
         <!-- ITEMS TABLE -->
         <div style="padding: 0 5px;">

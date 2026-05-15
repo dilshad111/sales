@@ -155,11 +155,25 @@
     </style>
 </head>
 <body>
+    @php
+        // Logo Base64
+        $logoBase64 = '';
+        if ($companySetting->logo_path) {
+            $logoPath = public_path('storage/' . $companySetting->logo_path);
+            if (file_exists($logoPath)) {
+                $type = pathinfo($logoPath, PATHINFO_EXTENSION);
+                $data = file_get_contents($logoPath);
+                $logoBase64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+            }
+        }
+    @endphp
     <div class="container">
         <div class="header">
-            @if($companySetting->logo_path)
-                <img src="{{ public_path('storage/' . $companySetting->logo_path) }}" class="logo">
-            @endif
+            <div class="logo-container">
+                @if($logoBase64)
+                    <img src="{{ $logoBase64 }}" class="logo">
+                @endif
+            </div>
             <div class="company-name" style="font-size: 28pt; letter-spacing: 2px;">{{ $companySetting->name }}</div>
             <div class="company-details" style="font-size: 11pt; font-weight: bold;">{{ $companySetting->address }}</div>
             <div class="company-details">Phone: {{ $companySetting->phone }} | Email: {{ $companySetting->email }}</div>
