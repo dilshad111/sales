@@ -53,10 +53,11 @@
                 <label for="total_amount" class="form-label">Total Payment Amount</label>
                 <div class="input-group">
                     <span class="input-group-text bg-primary text-white border-primary">{{ $companySetting->currency_symbol ?? 'Rs.' }}</span>
-                    <input type="number" step="0.01" class="form-control border-primary fw-bold" id="total_amount" name="total_amount" value="0.00">
+                    <input type="text" class="form-control border-primary fw-bold" id="total_amount" name="total_amount" value="0.00">
                 </div>
                 <!-- Large Formatted Display -->
                 <div class="h5 mt-2 font-weight-bold text-primary" id="total-formatted">{{ $companySetting->currency_symbol ?? 'Rs.' }} 0.00</div>
+                <div class="small text-muted mb-2 fw-bold" id="amount-in-words" style="font-style: italic;">Rupees Zero Only</div>
                 <small class="text-muted">Enter total amount to auto-distribute or select bills below.</small>
             </div>
 
@@ -125,6 +126,166 @@ const resetBillSection = () => {
     billLoader.classList.add('d-none');
     billEmpty.classList.add('d-none');
     totalAmountInput.value = '0.00';
+    updateAmountInWords();
+};
+
+const formatInput = (input) => {
+    const selectionStart = input.selectionStart;
+    const value = input.value;
+    
+    // Count digits before cursor
+    let digitsBeforeCursor = 0;
+    for (let i = 0; i < selectionStart; i++) {
+        if (/[0-9.]/.test(value[i])) {
+            digitsBeforeCursor++;
+        }
+    }
+    
+    // Clean and parse the whole value
+    let cleanVal = value.replace(/[^0-9.]/g, '');
+    
+    // Handle decimal points (keep only first)
+    const dotIndex = cleanVal.indexOf('.');
+    if (dotIndex !== -1) {
+        cleanVal = cleanVal.substring(0, dotIndex + 1) + cleanVal.substring(dotIndex + 1).replace(/\./g, '');
+        const parts = cleanVal.split('.');
+        if (parts[1].length > 2) {
+            parts[1] = parts[1].substring(0, 2);
+        }
+        cleanVal = parts.join('.');
+    }
+    
+    // Format integer part
+    const parts = cleanVal.split('.');
+    let integerPart = parts[0];
+    const decimalPart = parts[1];
+    
+    if (integerPart.length > 1 && integerPart.startsWith('0')) {
+        integerPart = integerPart.replace(/^0+/, '');
+        if (integerPart === '') integerPart = '0';
+    }
+    
+    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    let formattedValue = formattedInteger;
+    if (dotIndex !== -1) {
+        formattedValue += '.' + (decimalPart !== undefined ? decimalPart : '');
+    }
+    
+    input.value = formattedValue;
+    
+    // Position cursor after the same number of digits
+    let newCursorPos = 0;
+    let digitsFound = 0;
+    for (let i = 0; i < formattedValue.length; i++) {
+        if (digitsFound === digitsBeforeCursor) {
+            break;
+        }
+        if (/[0-9.]/.test(formattedValue[i])) {
+            digitsFound++;
+        }
+        newCursorPos++;
+    }
+    
+    input.setSelectionRange(newCursorPos, newCursorPos);
+};
+
+const formatOnBlur = (input) => {
+    let cleanVal = input.value.replace(/[^0-9.]/g, '');
+    let parsed = parseFloat(cleanVal);
+    if (isNaN(parsed)) {
+        parsed = 0;
+    }
+    input.value = parsed.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+};
+
+const convertNumberToWords = (number, isFinal = true) => {
+    const dictionary = {
+        0: 'zero', 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five',
+        6: 'six', 7: 'seven', 8: 'eight', 9: 'nine', 10: 'ten',
+        11: 'eleven', 12: 'twelve', 13: 'thirteen', 14: 'fourteen', 15: 'fifteen',
+        16: 'sixteen', 17: 'seventeen', 18: 'eighteen', 19: 'nineteen', 20: 'twenty',
+        30: 'thirty', 40: 'forty', 50: 'fifty', 60: 'sixty', 70: 'seventy',
+        80: 'eighty', 90: 'ninety', 100: 'hundred', 1000: 'thousand',
+        1000000: 'million', 1000000000: 'billion'
+    };
+
+    if (isNaN(number)) return '';
+    if (number < 0) return 'negative ' + convertNumberToWords(Math.abs(number), isFinal);
+
+    let string = null;
+
+    if (number < 21) {
+        string = dictionary[number];
+    } else if (number < 100) {
+        const tens = Math.floor(number / 10) * 10;
+        const units = number % 10;
+        string = dictionary[tens];
+        if (units) {
+            string += '-' + dictionary[units];
+        }
+    } else if (number < 1000) {
+        const hundreds = Math.floor(number / 100);
+        const remainder = number % 100;
+        string = dictionary[hundreds] + ' ' + dictionary[100];
+        if (remainder) {
+            string += (isFinal ? ' and ' : ' ') + convertNumberToWords(remainder, isFinal);
+        }
+    } else {
+        let baseUnit = 1000;
+        if (number >= 1000000000) {
+            baseUnit = 1000000000;
+        } else if (number >= 1000000) {
+            baseUnit = 1000000;
+        }
+
+        const numBaseUnits = Math.floor(number / baseUnit);
+        const remainder = number % baseUnit;
+
+        string = convertNumberToWords(numBaseUnits, false) + ' ' + dictionary[baseUnit];
+
+        if (remainder) {
+            string += remainder < 100 ? ' and ' : ' ';
+            string += convertNumberToWords(remainder, isFinal);
+        }
+    }
+
+    return string;
+};
+
+const amountToWords = (number) => {
+    if (isNaN(number) || number <= 0) {
+        let currencyName = currencySymbol;
+        if (currencyName === 'Rs.') {
+            currencyName = 'Rupees';
+        }
+        return currencyName + " Zero Only";
+    }
+    const whole = Math.floor(number);
+    const decimal = Math.round((number - whole) * 100);
+
+    const words = convertNumberToWords(whole);
+    const titleCase = (str) => str.replace(/\b\w/g, c => c.toUpperCase());
+
+    let paisa = "";
+    if (decimal > 0) {
+        paisa = " and " + titleCase(convertNumberToWords(decimal)) + " Paise";
+    }
+
+    let currencyName = currencySymbol;
+    if (currencyName === 'Rs.') {
+        currencyName = 'Rupees';
+    }
+
+    return currencyName + " " + titleCase(words) + paisa + " Only";
+};
+
+const updateAmountInWords = () => {
+    const valString = totalAmountInput.value.replace(/,/g, '');
+    const amount = parseFloat(valString);
+    document.getElementById('amount-in-words').textContent = amountToWords(amount);
 };
 
 const updateTotal = () => {
@@ -137,13 +298,14 @@ const updateTotal = () => {
             }
         }
     });
-    const formattedTotal = total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    totalAmountInput.value = total.toFixed(2);
+    const formattedTotal = total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    totalAmountInput.value = formattedTotal;
     document.getElementById('total-formatted').textContent = currencySymbol + ' ' + formattedTotal;
+    updateAmountInWords();
 };
 
 const distributeTotal = () => {
-    let remaining = parseFloat(totalAmountInput.value);
+    let remaining = parseFloat(totalAmountInput.value.replace(/,/g, ''));
     if (isNaN(remaining) || remaining < 0) remaining = 0;
 
     billTableBody.querySelectorAll('tr').forEach(row => {
@@ -166,10 +328,17 @@ const distributeTotal = () => {
 };
 
 totalAmountInput.addEventListener('input', (e) => {
+    formatInput(totalAmountInput);
     // Only distribute if the user is typing (not if it was updated by updateTotal)
     if (document.activeElement === totalAmountInput) {
         distributeTotal();
     }
+    updateAmountInWords();
+});
+
+totalAmountInput.addEventListener('blur', (e) => {
+    formatOnBlur(totalAmountInput);
+    updateAmountInWords();
 });
 
 const renderBills = (bills) => {
@@ -290,5 +459,9 @@ customerSelect.addEventListener('change', (event) => {
 if (customerSelect.value) {
     loadBillsForCustomer(customerSelect.value);
 }
+
+// Initial formatting and words display
+formatOnBlur(totalAmountInput);
+updateAmountInWords();
 </script>
 @endsection

@@ -8,7 +8,7 @@ echo STAGING ALL CHANGES...
 git add .
 echo.
 
-set msg=Reports Updated
+set msg=Payment receipt amount words
 set /p msg="Report Updated (Default: %msg%): "
 if "%msg%"=="" set msg=Update: %date% %time%
 
